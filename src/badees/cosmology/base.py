@@ -1,4 +1,7 @@
+import jax.numpy as jnp
 from caskade import Module, Param, forward
+
+from ..utils.constants import c
 
 
 class Cosmology(Module):
@@ -8,13 +11,105 @@ class Cosmology(Module):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.H0 = Param("H0", 70.0, description="Hubble constant at z=0 in km/s/Mpc")
-        self.omega_m = Param("omega_m", 0.3, description="Matter density parameter at z=0")
-        self.omega_l = Param("omega_l", 0.7, description="Dark energy density parameter at z=0")
+        self.H0 = Param("H0", 67.9, description="Hubble constant at z=0 in km/s/Mpc")
+        self.Omega_m = Param("Omega_m", 0.307, description="Matter density parameter at z=0")
+        self.Omega_k = Param("Omega_k", 0.0, description="Curvature density parameter at z=0")
+        self.Omega_r = Param("Omega_r", 0.0, description="Radiation density parameter at z=0")
+        self.Omega_l = Param(
+            "Omega_l",
+            lambda p: 1.0 - p.Omega_m.value - p.Omega_k.value - p.Omega_r.value,
+            link=(self.Omega_m, self.Omega_k, self.Omega_r),
+            description="Dark energy density parameter at z=0",
+        )
+        self.w = Param("w", -1.0, description="Dark energy equation of state parameter")
 
     @forward
-    def H(self, z, H0, omega_m, omega_l):
+    def H(
+        z,
+        H0,
+        Omega_m,
+        Omega_k,
+        Omega_r,
+        Omega_l,
+        w,
+    ):
         """
         Calculate the Hubble parameter at redshift z.
         """
-        return H0 * (omega_m * (1 + z) ** 3 + omega_l) ** 0.5
+
+        return (
+            H0
+            * (
+                Omega_m * (1 + z) ** 3
+                + Omega_k * (1 + z) ** 2
+                + Omega_r * (1 + z) ** 4
+                + Omega_l * (1 + z) ** (3 * (1 + w))
+            )
+            ** 0.5
+        )
+
+    @forward
+    def comoving_distance(
+        self,
+        z,
+    ):
+        """
+        Calculate the comoving distance to redshift z.
+
+        Parameters
+        ----------
+        z: Tensor
+            Redshift.
+
+        Returns
+        -------
+        Tensor
+            Comoving distance to redshift z.
+        """
+        z_steps = jnp.linspace(0, z, 1000)
+        integrand = c / self.H(z_steps)
+        return jnp.trapz(integrand, z_steps)
+
+    @forward
+    def angular_diameter_distance(self, z):
+        """
+        Compute the angular diameter distance to redshift z.
+
+        Parameters
+        -----------
+        z: Array-like
+            redshift.
+
+            *Unit: unitless*
+
+        Returns
+        -------
+        d_a: Array-like
+            The angular diameter distance to redshift z.
+
+            *Unit: Mpc*
+
+        """
+        return self.comoving_distance(z) / (1 + z)
+
+    @forward
+    def luminosity_distance(self, z):
+        """
+        Compute the luminosity distance to redshift z.
+
+        Parameters
+        -----------
+        z: Array-like
+            redshift.
+
+            *Unit: unitless*
+
+        Returns
+        -------
+        d_L: Array-like
+            The luminosity distance to redshift z.
+
+            *Unit: Mpc*
+
+        """
+        return self.comoving_distance(z) * (1 + z)

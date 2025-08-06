@@ -9,21 +9,21 @@ class SNRateConst(BaseSNRate):
     Constant supernova rate module.
     """
 
-    def __init__(self, sn_type, rate, **kwargs):
-        super().__init__(sn_type, **kwargs)
-        self.rate = Param(
-            "rate",
-            rate,
+    def __init__(self, sn_type, cosmology, r, **kwargs):
+        super().__init__(sn_type, cosmology, **kwargs)
+        self.r = Param(
+            "r",
+            r,
             description="Supernova rate per unit volume",
             units="1/yr/Mpc^3",
         )
 
     @forward
-    def sn_rate(self, z, rate):
+    def rate_density(self, z, r):
         """
         Calculate the supernova rate at redshift z.
         """
-        return rate
+        return r
 
 
 class SNRateInterp(BaseSNRate):
@@ -31,21 +31,21 @@ class SNRateInterp(BaseSNRate):
     1D linear interpolating supernova rate module.
     """
 
-    def __init__(self, sn_type, rate_z_nodes, rate, **kwargs):
-        super().__init__(**kwargs)
+    def __init__(self, sn_type, cosmology, rate_z_nodes, r, **kwargs):
+        super().__init__(sn_type, cosmology, **kwargs)
         self.sn_type = sn_type
         self.rate_z_nodes = rate_z_nodes
-        self.rate = Param(
-            "rate",
-            rate,
+        self.r = Param(
+            "r",
+            r,
             description="Supernova rate per unit volume at redshift z",
             units="1/yr/Mpc^3",
         )
 
     @forward
-    def sn_rate(self, z, rate):
+    def rate_density(self, z, r):
         """
         Calculate the supernova rate at redshift z.
         """
         # Placeholder for actual calculation
-        return interp(z, self.rate_z_nodes, rate)
+        return interp(z, self.rate_z_nodes, r)

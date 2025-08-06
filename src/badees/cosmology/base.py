@@ -25,6 +25,7 @@ class Cosmology(Module):
 
     @forward
     def H(
+        self,
         z,
         H0,
         Omega_m,
@@ -68,29 +69,39 @@ class Cosmology(Module):
         """
         z_steps = jnp.linspace(0, z, 1000)
         integrand = c / self.H(z_steps)
-        return jnp.trapz(integrand, z_steps)
+        return jnp.trapezoid(integrand, z_steps)
 
     @forward
-    def angular_diameter_distance(self, z):
+    def transverse_comoving_distance(
+        self,
+        z,
+        H0,
+        Omega_k,
+    ):
         """
-        Compute the angular diameter distance to redshift z.
+        Calculate the transverse comoving distance to redshift z.
 
         Parameters
-        -----------
-        z: Array-like
-            redshift.
-
-            *Unit: unitless*
+        ----------
+        z: Tensor
+            Redshift.
 
         Returns
         -------
-        d_a: Array-like
-            The angular diameter distance to redshift z.
-
-            *Unit: Mpc*
-
+        Tensor
+            Transverse comoving distance to redshift z.
         """
-        return self.comoving_distance(z) / (1 + z)
+        DC = self.comoving_distance(z)
+        DH = c / H0
+        return jnp.where(
+            Omega_k > 0,
+            DH * (1 / Omega_k**0.5) * jnp.sinh(Omega_k**0.5 * DC / DH),
+            jnp.where(
+                Omega_k < 0,
+                DH * (1 / jnp.abs(Omega_k) ** 0.5) * jnp.sin(jnp.abs(Omega_k) ** 0.5 * DC / DH),
+                DC,
+            ),
+        )
 
     @forward
     def luminosity_distance(self, z):
@@ -112,4 +123,49 @@ class Cosmology(Module):
             *Unit: Mpc*
 
         """
-        return self.comoving_distance(z) * (1 + z)
+        return self.transverse_comoving_distance(z) * (1 + z)
+
+    @forward
+    def angular_diameter_distance(self, z):
+        """
+        Compute the angular diameter distance to redshift z.
+
+        Parameters
+        -----------
+        z: Array-like
+            redshift.
+
+            *Unit: unitless*
+
+        Returns
+        -------
+        d_a: Array-like
+            The angular diameter distance to redshift z.
+
+            *Unit: Mpc*
+
+        """
+        return self.transverse_comoving_distance(z) / (1 + z)
+
+    @forward
+    def differential_rate_density(self, z):
+        """
+        Compute the differential rate density at redshift z.
+
+        Parameters
+        -----------
+        z: Array-like
+            redshift.
+
+            *Unit: unitless*
+
+        Returns
+        -------
+        dR/dz: Array-like
+            The differential rate density at redshift z.
+
+            *Unit: Mpc^3 / yr*
+
+        """
+        dV_dz = 4 * jnp.pi * c * self.transverse_comoving_distance(z) ** 2 / self.H(z)
+        return dV_dz

@@ -1,2 +1,3 @@
-# BaDEES
-Bayesian Dark Energy Equation of State
+# Cosmographi
+
+Bayesian Dark Energy Equation of State package

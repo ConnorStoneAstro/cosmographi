@@ -1,1 +1,1 @@
-from .bands import bands
+from .load_bands import bands

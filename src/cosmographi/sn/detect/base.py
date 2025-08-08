@@ -1,4 +1,4 @@
-from caskade import Module, Param, forward
+from caskade import Module, forward
 
 
 class BaseDetect(Module):

@@ -1,7 +1,7 @@
 import jax.numpy as jnp
 from caskade import Module, Param, forward
 
-from ..utils.constants import c
+from ..utils.constants import c_km
 
 
 class Cosmology(Module):
@@ -67,7 +67,7 @@ class Cosmology(Module):
         Calculate the comoving distance to redshift z. Units: Mpc.
         """
         z_steps = jnp.linspace(0, z, 1000)
-        integrand = c / self.H(z_steps)
+        integrand = c_km / self.H(z_steps)
         return jnp.trapezoid(integrand, z_steps)
 
     @forward
@@ -81,7 +81,7 @@ class Cosmology(Module):
         Calculate the transverse comoving distance to redshift z. Units: Mpc.
         """
         DC = self.comoving_distance(z)
-        DH = c / H0
+        DH = c_km / H0
         return jnp.where(
             Omega_k > 0,
             DH * (1 / Omega_k**0.5) * jnp.sinh(Omega_k**0.5 * DC / DH),
@@ -111,4 +111,4 @@ class Cosmology(Module):
         """
         Compute the differential comoving volume at redshift z, ie dV/dz. Units: Mpc^3.
         """
-        return 4 * jnp.pi * c * self.transverse_comoving_distance(z) ** 2 / self.H(z)
+        return 4 * jnp.pi * c_km * self.transverse_comoving_distance(z) ** 2 / self.H(z)

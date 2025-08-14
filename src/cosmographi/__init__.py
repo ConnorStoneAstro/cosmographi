@@ -1,5 +1,6 @@
 __version__ = "0.0.0"
 from . import cosmology, sn, utils
+from .cosmology import Cosmology
 
 import jax
 

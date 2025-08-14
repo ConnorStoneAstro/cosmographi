@@ -10,9 +10,8 @@ class BaseSNRate(Module):
     Base class for supernova rate modules.
     """
 
-    def __init__(self, sn_type, cosmology: Cosmology, z_max, **kwargs):
+    def __init__(self, cosmology: Cosmology, z_max, **kwargs):
         super().__init__(**kwargs)
-        self.sn_type = sn_type
         self.cosmology = cosmology
         self.z_max = z_max
 
@@ -46,9 +45,8 @@ class BaseSNRate(Module):
         rate_density = self.rate_density(z)
         vdcv = jax.vmap(self.cosmology.differential_comoving_volume)
         dVdz = vdcv(z)
-        dz = z[1] - z[0]
         rate = rate_density * dVdz
-        P = rate / jnp.trapezoid(rate, dz=dz)
+        P = rate / jnp.trapezoid(rate, z)
         return z, P
 
     @forward
@@ -61,3 +59,12 @@ class BaseSNRate(Module):
         z_vals, p_vals = self._P()
         dz = z_vals[1] - z_vals[0]
         return z_vals, jnp.cumsum(p_vals) * dz
+
+    @forward
+    def sample(self, key, shape):
+        """
+        Sample supernovae from the rate distribution.
+        """
+        z_vals, cdf = self.CDF()
+        u = jax.random.uniform(key, shape)
+        return jnp.interp(u, cdf, z_vals)

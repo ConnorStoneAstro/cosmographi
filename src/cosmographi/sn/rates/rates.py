@@ -1,5 +1,5 @@
 from caskade import Param, forward
-from jax.numpy import interp
+import jax.numpy as jnp
 
 from .base import BaseSNRate
 
@@ -9,8 +9,8 @@ class SNRateConst(BaseSNRate):
     Constant supernova rate module.
     """
 
-    def __init__(self, sn_type, cosmology, r, **kwargs):
-        super().__init__(sn_type, cosmology, **kwargs)
+    def __init__(self, cosmology, r, **kwargs):
+        super().__init__(cosmology, **kwargs)
         self.r = Param(
             "r",
             r,
@@ -19,7 +19,7 @@ class SNRateConst(BaseSNRate):
         )
 
     @forward
-    def rate_density(self, z, r):
+    def rate_density(self, z, r=None):
         """
         Calculate the supernova rate at redshift z.
         """
@@ -31,10 +31,9 @@ class SNRateInterp(BaseSNRate):
     1D linear interpolating supernova rate module.
     """
 
-    def __init__(self, sn_type, cosmology, rate_z_nodes, r, **kwargs):
-        super().__init__(sn_type, cosmology, **kwargs)
-        self.sn_type = sn_type
-        self.rate_z_nodes = rate_z_nodes
+    def __init__(self, cosmology, rate_z_nodes, r, **kwargs):
+        super().__init__(cosmology, **kwargs)
+        self.rate_z_nodes = jnp.array(rate_z_nodes)
         self.r = Param(
             "r",
             r,
@@ -43,9 +42,9 @@ class SNRateInterp(BaseSNRate):
         )
 
     @forward
-    def rate_density(self, z, r):
+    def rate_density(self, z, r=None):
         """
         Calculate the supernova rate at redshift z.
         """
         # Placeholder for actual calculation
-        return interp(z, self.rate_z_nodes, r)
+        return jnp.interp(z, self.rate_z_nodes, r)

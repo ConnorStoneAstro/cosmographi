@@ -1,6 +1,6 @@
 import jax
 import jax.numpy as jnp
-from caskade import Module
+from caskade import Module, forward, active_cache
 
 from ...cosmology import Cosmology
 
@@ -39,6 +39,8 @@ class BaseSNRate(Module):
         rate = self.rate(z1, z2)
         return rate * t
 
+    @active_cache
+    @forward
     def _P(self):
         z = jnp.linspace(0, self.z_max, 1000)
         rate_density = self.rate_density(z)
@@ -49,6 +51,13 @@ class BaseSNRate(Module):
         P = rate / jnp.trapezoid(rate, dz=dz)
         return z, P
 
+    @forward
     def P(self, z):
         z_vals, p_vals = self._P()
         return jnp.interp(z, z_vals, p_vals)
+
+    @forward
+    def CDF(self):
+        z_vals, p_vals = self._P()
+        dz = z_vals[1] - z_vals[0]
+        return z_vals, jnp.cumsum(p_vals) * dz

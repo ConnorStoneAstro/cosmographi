@@ -9,17 +9,17 @@ class Cosmology(Module):
     Base class for cosmology modules.
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, H0=67.9, Omega_m=0.307, Omega_k=0.0, Omega_r=0.0, w0=-1.0, wa=0.0, **kwargs):
         super().__init__(**kwargs)
-        self.H0 = Param("H0", 67.9, description="Hubble constant at z=0", units="km/s/Mpc")
+        self.H0 = Param("H0", H0, description="Hubble constant at z=0", units="km/s/Mpc")
         self.Omega_m = Param(
-            "Omega_m", 0.307, description="Matter density parameter at z=0", units="unitless"
+            "Omega_m", Omega_m, description="Matter density parameter at z=0", units="unitless"
         )
         self.Omega_k = Param(
-            "Omega_k", 0.0, description="Curvature density parameter at z=0", units="unitless"
+            "Omega_k", Omega_k, description="Curvature density parameter at z=0", units="unitless"
         )
         self.Omega_r = Param(
-            "Omega_r", 0.0, description="Radiation density parameter at z=0", units="unitless"
+            "Omega_r", Omega_r, description="Radiation density parameter at z=0", units="unitless"
         )
         self.Omega_l = Param(
             "Omega_l",
@@ -28,8 +28,17 @@ class Cosmology(Module):
             description="Dark energy density parameter at z=0",
             units="unitless",
         )
-        self.w = Param(
-            "w", -1.0, description="Dark energy equation of state parameter", units="unitless"
+        self.w0 = Param(
+            "w0",
+            w0,
+            description="Dark energy equation of state parameter, intercept",
+            units="unitless",
+        )
+        self.wa = Param(
+            "wa",
+            wa,
+            description="Dark energy equation of state parameter, slope",
+            units="unitless",
         )
 
     @forward
@@ -41,7 +50,8 @@ class Cosmology(Module):
         Omega_k,
         Omega_r,
         Omega_l,
-        w,
+        w0,
+        wa,
     ):
         """
         Calculate the Hubble parameter at redshift z. Units: km/s/Mpc.
@@ -53,7 +63,7 @@ class Cosmology(Module):
                 Omega_m * (1 + z) ** 3
                 + Omega_k * (1 + z) ** 2
                 + Omega_r * (1 + z) ** 4
-                + Omega_l * (1 + z) ** (3 * (1 + w))
+                + Omega_l * (1 + z) ** (3 * (1 + w0 + wa * z / (1 + z)))
             )
             ** 0.5
         )
@@ -66,7 +76,7 @@ class Cosmology(Module):
         """
         Calculate the comoving distance to redshift z. Units: Mpc.
         """
-        z_steps = jnp.linspace(0, z, 1000)
+        z_steps = jnp.linspace(0, z, 10000)
         integrand = c_km / self.H(z_steps)
         return jnp.trapezoid(integrand, z_steps)
 

@@ -1,4 +1,5 @@
 import jax.numpy as jnp
+import jax
 from caskade import Module, Param, forward
 
 from ..utils.constants import c_km
@@ -9,7 +10,17 @@ class Cosmology(Module):
     Base class for cosmology modules.
     """
 
-    def __init__(self, H0=67.9, Omega_m=0.307, Omega_k=0.0, Omega_r=0.0, w0=-1.0, wa=0.0, **kwargs):
+    def __init__(
+        self,
+        H0=67.9,
+        Omega_m=0.307,
+        Omega_k=0.0,
+        Omega_r=0.0,
+        w0=-1.0,
+        wa=0.0,
+        transverse_comoving_distance_expansion_order=5,
+        **kwargs,
+    ):
         super().__init__(**kwargs)
         self.H0 = Param("H0", H0, description="Hubble constant at z=0", units="km/s/Mpc")
         self.Omega_m = Param(
@@ -39,6 +50,9 @@ class Cosmology(Module):
             wa,
             description="Dark energy equation of state parameter, slope",
             units="unitless",
+        )
+        self.transverse_comoving_distance_expansion_order = (
+            transverse_comoving_distance_expansion_order
         )
 
     @forward
@@ -76,7 +90,7 @@ class Cosmology(Module):
         """
         Calculate the comoving distance to redshift z. Units: Mpc.
         """
-        z_steps = jnp.linspace(0, z, 10000)
+        z_steps = jnp.linspace(0, z, 1000)
         integrand = c_km / self.H(z_steps)
         return jnp.trapezoid(integrand, z_steps)
 
@@ -92,15 +106,10 @@ class Cosmology(Module):
         """
         DC = self.comoving_distance(z)
         DH = c_km / H0
-        return jnp.where(
-            Omega_k > 0,
-            DH * (1 / Omega_k**0.5) * jnp.sinh(Omega_k**0.5 * DC / DH),
-            jnp.where(
-                Omega_k < 0,
-                DH * (1 / jnp.abs(Omega_k) ** 0.5) * jnp.sin(jnp.abs(Omega_k) ** 0.5 * DC / DH),
-                DC,
-            ),
-        )
+        D_TC = 0.0
+        for k in range(self.transverse_comoving_distance_expansion_order):
+            D_TC = D_TC + Omega_k**k * (DC / DH) ** (2 * k) / jax.scipy.special.factorial(1 + 2 * k)
+        return DC * D_TC
 
     @forward
     def luminosity_distance(self, z):

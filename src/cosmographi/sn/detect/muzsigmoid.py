@@ -22,7 +22,7 @@ class MuSigmoidDetect(BaseDetect):
         )
 
     @forward
-    def logP(self, z, mu, threshold=None, scale=None):
+    def log_prob(self, z, mu, threshold=None, scale=None):
         return jax.nn.log_sigmoid(-(mu - threshold) / scale)
 
 
@@ -56,5 +56,5 @@ class MuZSigmoidDetect(BaseDetect):
         )
 
     @forward
-    def logP(self, z, mu, t_b=None, t_m=None, s_b=None, s_m=None):
+    def log_prob(self, z, mu, t_b=None, t_m=None, s_b=None, s_m=None):
         return jax.nn.log_sigmoid(-(mu - (t_b + t_m * z)) / (s_b + s_m * z))

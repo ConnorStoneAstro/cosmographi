@@ -11,8 +11,9 @@ class CombinedSNRate(BaseSNRate):
         self.sn_rates = sn_rates
 
     @forward
-    def Ptype(self, z, t):
-        return self.sn_rates[t].rate_density(z) / self.rate_density(z)
+    def logPt_z(self, t, z):
+        # P(t|z)
+        return jnp.log(self.sn_rates[t].rate_density(z) / self.rate_density(z) + 1e-10)
 
     @forward
     def sample_type(self, key, z):
@@ -21,4 +22,5 @@ class CombinedSNRate(BaseSNRate):
 
     @forward
     def rate_density(self, z):
+        # P(z)
         return sum(sn_rate.rate_density(z) for sn_rate in self.sn_rates)

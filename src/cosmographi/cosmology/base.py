@@ -1,6 +1,6 @@
 import jax.numpy as jnp
 import jax
-from caskade import Module, Param, forward
+from caskade import Module, Param, forward, active_cache
 
 from ..utils.constants import c_km
 
@@ -18,6 +18,7 @@ class Cosmology(Module):
         Omega_r=0.0,
         w0=-1.0,
         wa=0.0,
+        z_max=2.0,
         transverse_comoving_distance_expansion_order=5,
         **kwargs,
     ):
@@ -51,6 +52,7 @@ class Cosmology(Module):
             description="Dark energy equation of state parameter, slope",
             units="unitless",
         )
+        self.z_max = z_max
         self.transverse_comoving_distance_expansion_order = (
             transverse_comoving_distance_expansion_order
         )
@@ -82,6 +84,14 @@ class Cosmology(Module):
             ** 0.5
         )
 
+    @active_cache
+    @forward
+    def _cmd(self):
+        z = jnp.linspace(0, self.z_max, 10000)
+        integrand = (c_km * (z[1] - z[0])) / self.H(z)
+        DC = jnp.cumsum(integrand)
+        return z, DC
+
     @forward
     def comoving_distance(
         self,
@@ -90,9 +100,8 @@ class Cosmology(Module):
         """
         Calculate the comoving distance to redshift z. Units: Mpc.
         """
-        z_steps = jnp.linspace(0, z, 1000)
-        integrand = c_km / self.H(z_steps)
-        return jnp.trapezoid(integrand, z_steps)
+        _z, DC = self._cmd()
+        return jnp.interp(z, _z, DC)
 
     @forward
     def transverse_comoving_distance(

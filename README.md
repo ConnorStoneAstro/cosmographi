@@ -1,3 +1,3 @@
 # Cosmographi
 
-Bayesian Dark Energy Equation of State package
+Bayesian Dark Energy Equation of State cosmography package.

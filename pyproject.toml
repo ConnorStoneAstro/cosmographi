@@ -33,10 +33,10 @@ classifiers=[
 ]
 
 [project.urls]
-Homepage = "https://github.com/ConnorStoneAstro/BaDEES"
-Documentation = "https://badees.readthedocs.io/en/latest/"
-Repository = "https://github.com/ConnorStoneAstro/BaDEES"
-Issues = "https://github.com/ConnorStoneAstro/BaDEES/issues"
+Homepage = "https://github.com/ConnorStoneAstro/cosmographi"
+Documentation = "https://cosmographi.readthedocs.io/en/latest/"
+Repository = "https://github.com/ConnorStoneAstro/cosmographi"
+Issues = "https://github.com/ConnorStoneAstro/cosmographi/issues"
 
 [project.optional-dependencies]
 dev = [

@@ -28,6 +28,7 @@ def mala(
     L = jnp.linalg.cholesky(mass)  # (D, D)
 
     samples = jnp.zeros((num_samples, C, D), dtype=x.dtype)  # (N, C, D)
+    accept = jnp.zeros((num_samples, C), dtype=bool)  # (N,C)
 
     # Cache current state
     logp_cur = vlogP(x)  # (C,)
@@ -66,16 +67,16 @@ def mala(
         # Accept or reject
         key, subkey = jax.random.split(key)
         u = jax.random.uniform(subkey, (C,))  # (C,)
-        accept = jnp.log(u) < log_alpha  # (C,)
+        accept = accept.at[t].set(jnp.log(u) < log_alpha)  # (N, C)
 
         # Update all three pieces in-place where accepted
-        x = x.at[accept].set(x_prop[accept])  # (C, D)
-        logp_cur = logp_cur.at[accept].set(logp_prop[accept])  # (C,)
-        grad_cur = grad_cur.at[accept].set(grad_prop[accept])  # (C, D)
+        x = x.at[accept[t]].set(x_prop[accept[t]])  # (C, D)
+        logp_cur = logp_cur.at[accept[t]].set(logp_prop[accept[t]])  # (C,)
+        grad_cur = grad_cur.at[accept[t]].set(grad_prop[accept[t]])  # (C, D)
 
         samples = samples.at[t].set(x)  # (N, C, D)
 
         if progress:
-            it.set_postfix(acc_rate=f"{accept.mean():0.2f}")
+            it.set_postfix(acc_rate=f"{accept[:t+1].mean():0.2f}")
 
     return samples

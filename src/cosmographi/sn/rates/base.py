@@ -1,6 +1,6 @@
 import jax
 import jax.numpy as jnp
-from caskade import Module, forward, active_cache
+from caskade import Module, forward
 
 from ...cosmology import Cosmology
 
@@ -39,7 +39,6 @@ class BaseSNRate(Module):
         rate = self.rate(z1, z2)
         return rate * t
 
-    @active_cache
     @forward
     def _P(self):
         z = jnp.linspace(self.z_min, self.z_max, 1000)

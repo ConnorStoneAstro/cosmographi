@@ -1,6 +1,6 @@
 import jax.numpy as jnp
 import jax
-from caskade import Module, Param, forward, active_cache
+from caskade import Module, Param, forward
 
 from ..utils.constants import c_km
 
@@ -84,10 +84,9 @@ class Cosmology(Module):
             ** 0.5
         )
 
-    @active_cache
     @forward
     def _cmd(self):
-        z = jnp.linspace(0, self.z_max, 10000)
+        z = jnp.linspace(0, self.z_max, 1000)
         integrand = (c_km * (z[1] - z[0])) / self.H(z)
         DC = jnp.cumsum(integrand)
         return z, DC

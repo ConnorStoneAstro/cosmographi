@@ -3,6 +3,7 @@ import jax.numpy as jnp
 from caskade import Module, forward
 
 from ...cosmology import Cosmology
+from ...utils import quad
 
 
 class BaseSNRate(Module):
@@ -26,11 +27,13 @@ class BaseSNRate(Module):
         """
         Calculate the rate of supernovae per year between redshifts z1 and z2.
         """
-        z = jnp.linspace(z1, z2, 1000)
-        rate_density = self.rate_density(z)
-        vdcv = jax.vmap(self.cosmology.differential_comoving_volume)
-        dVdz = vdcv(z)
-        return jnp.trapezoid(rate_density * dVdz, z)
+        # z = jnp.linspace(z1, z2, 1000)
+        # rate_density = self.rate_density(z)
+        # vdcv = jax.vmap(self.cosmology.differential_comoving_volume)
+        # dVdz = vdcv(z)
+        # return jnp.trapezoid(rate_density * dVdz, z)
+        integrand = lambda z: self.rate_density(z) * self.cosmology.differential_comoving_volume(z)
+        return quad(integrand, z1, z2, n=20)
 
     def expectation(self, z1, z2, t):
         """
@@ -41,7 +44,7 @@ class BaseSNRate(Module):
 
     @forward
     def _P(self):
-        z = jnp.linspace(self.z_min, self.z_max, 1000)
+        z = jnp.linspace(self.z_min, self.z_max, 10000)
         rate_density = self.rate_density(z)
         vdcv = jax.vmap(self.cosmology.differential_comoving_volume)
         dVdz = vdcv(z)
@@ -51,8 +54,10 @@ class BaseSNRate(Module):
 
     @forward
     def logPz(self, z):
-        z_vals, p_vals = self._P()
-        return jnp.log(jnp.interp(z, z_vals, p_vals) + 1e-10)
+        # z_vals, p_vals = self._P()
+        # return jnp.log(jnp.interp(z, z_vals, p_vals) + 1e-10)
+        rate = lambda z: self.rate_density(z) * self.cosmology.differential_comoving_volume(z)
+        return jnp.log(rate(z) / quad(rate, self.z_min, self.z_max, n=20) + 1e-10)
 
     @forward
     def CDF(self):

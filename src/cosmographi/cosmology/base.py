@@ -3,6 +3,7 @@ import jax
 from caskade import Module, Param, forward
 
 from ..utils.constants import c_km
+from ..utils import quad
 
 
 class Cosmology(Module):
@@ -84,12 +85,12 @@ class Cosmology(Module):
             ** 0.5
         )
 
-    @forward
-    def _cmd(self):
-        z = jnp.linspace(0, self.z_max, 1000)
-        integrand = (c_km * (z[1] - z[0])) / self.H(z)
-        DC = jnp.cumsum(integrand)
-        return z, DC
+    # @forward
+    # def _cmd(self):
+    #     z = jnp.linspace(0, self.z_max, 10000)
+    #     integrand = (c_km * (z[1] - z[0])) / self.H(z)
+    #     DC = jnp.cumsum(integrand)
+    #     return z, DC
 
     @forward
     def comoving_distance(
@@ -99,8 +100,10 @@ class Cosmology(Module):
         """
         Calculate the comoving distance to redshift z. Units: Mpc.
         """
-        _z, DC = self._cmd()
-        return jnp.interp(z, _z, DC)
+        # _z, DC = self._cmd()
+        # return jnp.interp(z, _z, DC)
+        integrand = lambda z: c_km / self.H(z)
+        return quad(integrand, 0.0, z, n=20)
 
     @forward
     def transverse_comoving_distance(

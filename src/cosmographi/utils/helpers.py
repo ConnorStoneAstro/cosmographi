@@ -16,7 +16,7 @@ def vmap_chunked1d(func, chunk_size=1024):
     Vectorized map with chunking to reduce memory usage
     """
 
-    vf = jax.vmap(func)
+    vf = jax.jit(jax.vmap(func))
 
     def wrapper(arg):
         n = arg.shape[0]

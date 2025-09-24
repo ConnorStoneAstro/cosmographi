@@ -1,6 +1,7 @@
 from .base import BaseDetect
 from .muzsigmoid import MuSigmoidDetect, MuZSigmoidDetect
 from .zmMsigmoid import mSigmoidDetect, mzSigmoidDetect
+from .zmuNCDF import MuNCDFDetect
 
 __all__ = (
     "BaseDetect",
@@ -8,4 +9,5 @@ __all__ = (
     "MuZSigmoidDetect",
     "mSigmoidDetect",
     "mzSigmoidDetect",
+    "MuNCDFDetect",
 )

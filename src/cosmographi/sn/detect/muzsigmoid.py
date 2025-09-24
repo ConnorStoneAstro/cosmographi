@@ -1,6 +1,8 @@
 import jax
+import jax.numpy as jnp
 
 from .base import BaseDetect
+from ... import utils
 from caskade import forward, Param
 
 
@@ -24,6 +26,17 @@ class MuSigmoidDetect(BaseDetect):
     @forward
     def log_prob(self, z, mu, threshold=None, scale=None):
         return jax.nn.log_sigmoid(-(mu - threshold) / scale)
+
+    @forward
+    def logZ_norm(self, mean, sigma, threshold=None, scale=None):
+        s = jnp.maximum(sigma, scale)
+        mu = utils.midpoints(
+            jnp.minimum(mean, threshold) - 5 * s, jnp.maximum(mean, threshold) + 5 * s, 50
+        )
+        dmu = mu[1] - mu[0]
+        pg = jax.scipy.stats.norm.logpdf(mu, mean, sigma)
+        ps = self.log_prob(0, mu)
+        return jax.nn.logsumexp(pg + ps) + jnp.log(dmu)
 
 
 class MuZSigmoidDetect(BaseDetect):

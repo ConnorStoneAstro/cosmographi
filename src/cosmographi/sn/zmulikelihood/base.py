@@ -59,12 +59,14 @@ class ZMuLikelihood(Module):
     @forward
     def logP_d1_zobs(self, z_obs, cov):
         # int mu_obs
-        return utils.log_quad(
+        return utils.log_gauss_rescale_integrate(
             jax.vmap(self.logP_d1_zmuobs, in_axes=(0, None, None)),
             6,
             18,
+            mu=5 * jnp.log10(self.cosmology.luminosity_distance(jnp.clip(z_obs, 0.01, 2))) - 5,
+            sigma=jnp.sqrt(jnp.max(cov[:, 1, 1])),
             args=(z_obs, cov),
-            n=100,
+            n=50,
         )
 
     @forward

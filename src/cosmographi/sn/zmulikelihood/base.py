@@ -1,4 +1,4 @@
-from caskade import Module, forward
+from caskade import Module, forward, Param
 from ...cosmology import Cosmology
 from ..rates import CombinedSNRate
 from ..detect import BaseDetect
@@ -15,6 +15,7 @@ class ZMuLikelihood(Module):
         detect: list[BaseDetect],
         mean,
         cov,
+        var_bump=None,
         name=None,
     ):
         super().__init__(name=name)
@@ -23,6 +24,14 @@ class ZMuLikelihood(Module):
         self.detect = detect
         self.mean = mean
         self.cov = cov
+        if var_bump is None:
+            var_bump = jnp.zeros((len(detect), 2))
+        self.var_bump = Param(
+            "var_bump",
+            var_bump,
+            description="Additional variance to add to each SN z and mu, based on type",
+            units="unitless,mag^2",
+        )
 
     @forward
     def logP_Xd1_theta(self, z, X, cov_t, t):
@@ -39,14 +48,14 @@ class ZMuLikelihood(Module):
         return lp
 
     @forward
-    def logP_Xd1(self, X, cov):
+    def logP_Xd1(self, X, cov, var_bump=None):
         log_like = []
         for t in range(len(self.detect)):
             ll = utils.log_quad(
                 jax.vmap(self.logP_Xd1_theta, in_axes=(0, None, None, None)),
                 0,
                 2,
-                args=(X, cov[t], t),
+                args=(X, cov[t] + jnp.diag(var_bump[t]), t),
                 n=100,
             )
             log_like.append(ll)
@@ -64,7 +73,7 @@ class ZMuLikelihood(Module):
             6,
             18,
             mu=5 * jnp.log10(self.cosmology.luminosity_distance(jnp.clip(z_obs, 0.01, 2))) - 5,
-            sigma=jnp.sqrt(jnp.max(cov[:, 1, 1])),
+            sigma=1.2 * jnp.sqrt(jnp.max(cov[:, 1, 1])),
             args=(z_obs, cov),
             n=50,
         )

@@ -2,6 +2,12 @@ import jax.numpy as jnp
 import jax
 import numpy as np
 from tqdm import tqdm
+import numpy as np
+
+
+@jax.jit
+def cdist(x, y):
+    return jnp.sqrt(jnp.sum(((x[:, None] - y[None, :] + 1) % 2 - 1) ** 2, -1))
 
 
 def mala(
@@ -80,3 +86,48 @@ def mala(
             it.set_postfix(acc_rate=f"{accept[:t+1].mean():0.2f}")
 
     return samples
+
+
+def superuniform(key, n, d=1, c=10, bounds=None):
+    """
+    Samples `n` points in `d` dimensions in the hypercube [-1, 1]^d using a
+    superuniform sampling algorithm. The algorithm works by iteratively adding
+    points that are far away from existing points, ensuring a more uniform
+    distribution than simple random sampling.
+
+    The algorithm works as follows::
+
+        1. Start with a single uniform random sample.
+        2. For each subsequent point, generate `c` candidate points uniformly at
+        random.
+        3. For each candidate, compute the periodic boundary distance to the nearest existing point.
+        4. Select the candidate that maximizes the distance to the nearest point.
+        5. Repeat until `n` points are sampled.
+
+    Args:
+        key: JAX random key for random number generation.
+        n (int or tuple): Number of points to sample. If a tuple (m, n) is
+            provided, the function returns `m` sets of `n` points each.
+        d (int): Dimensionality of the hypercube.
+        c (int): Number of candidate points to consider for each new point.
+        bounds (tuple): Optional length (2, d) tuple specifying the (min, max) bounds for
+            rescaling the points from [-1, 1] to [min, max].
+    """
+    if isinstance(n, tuple) and len(n) == 2:
+        return jnp.stack(tuple(superuniform(n[1], d=d, c=c) for _ in range(n[0])), axis=0)
+    x = jnp.zeros(shape=(n, d))
+    key, subkey = jax.random.split(key)
+    x = x.at[0].set(jax.random.uniform(subkey, shape=(d,)) * 2 - 1)
+
+    for i in range(1, n):
+        key, subkey = jax.random.split(key)
+        candidates = jax.random.uniform(subkey, shape=(c, d)) * 2 - 1
+
+        D = cdist(x[:i], candidates)
+
+        x = x.at[i].set(candidates[jnp.argmax(jnp.min(D, axis=0))])
+
+    if bounds is not None:
+        bounds = jnp.array(bounds)
+        x = 0.5 * (x + 1) * (bounds[1] - bounds[0]) + bounds[0]
+    return x

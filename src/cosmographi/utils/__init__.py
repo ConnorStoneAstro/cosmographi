@@ -9,6 +9,7 @@ from .helpers import (
 )
 from .sampling import mala, superuniform
 from .integration import mid, quad, log_quad, gauss_rescale_integrate, log_gauss_rescale_integrate
+from .interpolation import WLS, RBF
 from .plots import corner_plot
 
 __all__ = (
@@ -21,10 +22,12 @@ __all__ = (
     "tdp_evaluate",
     "mala",
     "superuniform",
-    "corner_plot",
     "mid",
     "quad",
     "log_quad",
     "gauss_rescale_integrate",
     "log_gauss_rescale_integrate",
+    "WLS",
+    "RBF",
+    "corner_plot",
 )

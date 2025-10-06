@@ -4,10 +4,7 @@ import numpy as np
 from tqdm import tqdm
 import numpy as np
 
-
-@jax.jit
-def cdist(x, y):
-    return jnp.sqrt(jnp.sum(((x[:, None] - y[None, :] + 1) % 2 - 1) ** 2, -1))
+from .helpers import cdist_pbc
 
 
 def mala(
@@ -114,7 +111,10 @@ def superuniform(key, n, d=1, c=10, bounds=None):
             rescaling the points from [-1, 1] to [min, max].
     """
     if isinstance(n, tuple) and len(n) == 2:
-        return jnp.stack(tuple(superuniform(n[1], d=d, c=c) for _ in range(n[0])), axis=0)
+        subkeys = jax.random.split(key, n[0])
+        return jax.vmap(superuniform, in_axes=(0, None, None, None, None))(
+            subkeys, n[1], d, c, bounds
+        )
     x = jnp.zeros(shape=(n, d))
     key, subkey = jax.random.split(key)
     x = x.at[0].set(jax.random.uniform(subkey, shape=(d,)) * 2 - 1)
@@ -123,7 +123,7 @@ def superuniform(key, n, d=1, c=10, bounds=None):
         key, subkey = jax.random.split(key)
         candidates = jax.random.uniform(subkey, shape=(c, d)) * 2 - 1
 
-        D = cdist(x[:i], candidates)
+        D = cdist_pbc(x[:i], candidates)
 
         x = x.at[i].set(candidates[jnp.argmax(jnp.min(D, axis=0))])
 

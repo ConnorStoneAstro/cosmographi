@@ -90,11 +90,31 @@ class ZMuLikelihood(Module):
         )
 
     @forward
-    def _log_likelihood(self, X, cov):
-        return self.logP_Xd1(X, cov)
+    def _log_likelihood(self, i):
+        return self.logP_Xd1(self.mean[i], self.cov[i])
 
     @forward
     def log_likelihood(self):
-        return jax.vmap(self._log_likelihood)(self.mean, self.cov).sum() - len(
-            self.cov
-        ) * self.logP_d1(self.cov[0])
+        ll = jax.vmap(self._log_likelihood)(jnp.arange(len(self.mean))).sum()
+
+        x = self.build_params_array()
+        ll_norm = jax.vmap(utils.RBF, in_axes=(None, 0, 0, None, None, None))(
+            x, self.reference_points, self.weights, self.scale, utils.gaussian_kernel, -1
+        ).sum()
+
+        return ll - ll_norm
+
+    def initialize_logP_d1(self, key, param_bounds, num_points=50):
+        key, subkey = jax.random.split(key)
+        self.reference_points = utils.superuniform(
+            subkey, (len(self.mean), num_points), len(param_bounds), 10, param_bounds.T
+        )
+
+        logP_d1_vals = jax.vmap(jax.vmap(self.logP_d1, in_axes=(None, 0)))(
+            self.cov, self.reference_points
+        )
+
+        self.scale = param_bounds[:, 1] - param_bounds[:, 0]
+        self.weights = jax.vmap(lambda *x: utils.RBF_weights(*x, degree=-1), in_axes=(0, 0, None))(
+            self.reference_points, logP_d1_vals, self.scale
+        )

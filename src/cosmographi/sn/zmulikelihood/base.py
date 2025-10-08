@@ -110,11 +110,13 @@ class ZMuLikelihood(Module):
             subkey, (len(self.mean), num_points), len(param_bounds), 10, param_bounds.T
         )
 
-        logP_d1_vals = jax.vmap(jax.vmap(self.logP_d1, in_axes=(None, 0)))(
-            self.cov, self.reference_points
-        )
+        logP_d1_vals = utils.vmap_chunked1d(
+            jax.vmap(self.logP_d1, in_axes=(None, 0)), chunk_size=10, prog_bar=True
+        )(self.cov, self.reference_points).block_until_ready()
 
         self.scale = param_bounds[:, 1] - param_bounds[:, 0]
-        self.weights = jax.vmap(lambda *x: utils.RBF_weights(*x, degree=-1), in_axes=(0, 0, None))(
-            self.reference_points, logP_d1_vals, self.scale
-        )
+        self.weights = utils.vmap_chunked1d(
+            lambda *x: utils.RBF_weights(*x, scale=self.scale, degree=-1),
+            chunk_size=25,
+            prog_bar=True,
+        )(self.reference_points, logP_d1_vals).block_until_ready()

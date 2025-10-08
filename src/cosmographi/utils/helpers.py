@@ -21,12 +21,12 @@ def vmap_chunked1d(func, chunk_size=1024, prog_bar=False):
 
     vf = jax.jit(jax.vmap(func))
 
-    def wrapper(arg):
-        n = arg.shape[0]
+    def wrapper(*arg):
+        n = arg[0].shape[0]
         num_chunks = (n + chunk_size - 1) // chunk_size
         results = []
         for i in tqdm(range(0, n, chunk_size), disable=not prog_bar):
-            results.append(vf(arg[i : i + chunk_size]))
+            results.append(vf(*[a[i : i + chunk_size] for a in arg]))
         return jnp.concatenate(results, axis=0)
 
     return wrapper

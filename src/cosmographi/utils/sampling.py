@@ -3,6 +3,8 @@ import jax
 import numpy as np
 from tqdm import tqdm
 import numpy as np
+from scipy.stats.qmc import LatinHypercube
+
 
 from .helpers import cdist_pbc
 
@@ -131,3 +133,25 @@ def superuniform(key, n, d=1, c=10, bounds=None):
         bounds = jnp.array(bounds)
         x = 0.5 * (x + 1) * (bounds[1] - bounds[0]) + bounds[0]
     return x
+
+
+def latin_hypercube(m, n, d, bounds=None, seed=None):
+    """
+    Run scipy Latin Hypercube sampling m times for samples of n points in d dimensions.
+
+    Args:
+        m: number of random sets to draw
+        n: number of points in a random set
+        d: dimensionality of the hypercube
+        bounds (optional): length (2,d) np.array giving (min, max) bounds of hyper-cube
+        seed: int to pass to np.random.default_rng to make random number generator
+    """
+
+    rng = np.random.default_rng(seed)
+    sampler = LatinHypercube(d=d, rng=rng)
+    lhs = list(sampler.random(n=n) for _ in range(m))
+    lhs = np.stack(lhs)
+
+    if bounds is not None:
+        lhs = lhs * (bounds[1] - bounds[0]) + bounds[0]
+    return jnp.array(lhs)

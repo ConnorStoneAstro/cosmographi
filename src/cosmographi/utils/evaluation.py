@@ -148,8 +148,6 @@ def hdp_null_test(g: jnp.ndarray, s: jnp.ndarray):
     }
     ```
 
-
-
     """
     nsamp, nsim = s.shape
     q = jnp.sum(s >= g, axis=0)

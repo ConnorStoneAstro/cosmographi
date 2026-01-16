@@ -1,9 +1,42 @@
 from caskade import Module, forward
 import jax.numpy as jnp
 
-from ...cosmology import Cosmology
-from ...utils.constants import Mpc_to_cm, c_nm
-from ...utils.bands import bands
+from ..cosmology import Cosmology
+from ..utils.constants import Mpc_to_cm, c_nm
+from ..utils.bands import bands
+
+
+class BaseSource(Module):
+    """
+    Base class for representing astronomical sources.
+
+    This class serves as a foundation for more specific source types, such as stars,
+    galaxies, or supernovae. It can be extended to include common properties and methods
+    relevant to all source types.
+    """
+
+    def __init__(self, name=None):
+        super().__init__(name)
+
+
+class StaticSource(BaseSource):
+    """
+    Class for representing static astronomical sources.
+
+    This class is intended for sources that do not vary over time, such as stars or galaxies.
+    It can be extended to include properties and methods specific to static sources.
+    """
+
+    pass
+
+
+class TransientSource(BaseSource):
+    """
+    Class for representing transient astronomical sources.
+
+    This class is intended for sources that vary over time, such as supernovae or variable stars.
+    It can be extended to include properties and methods specific to transient sources.
+    """
 
 
 class BaseSNSED(Module):

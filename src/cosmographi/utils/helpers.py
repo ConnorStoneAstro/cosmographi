@@ -14,20 +14,34 @@ def midpoints(start, end, num):
     return jnp.linspace(start + rng / 2, end - rng / 2, num)
 
 
-def vmap_chunked1d(func, chunk_size=1024, prog_bar=False):
+def vmap_chunked1d(func, chunk_size=1024, prog_bar=False, in_axes=0, out_axis=0):
     """
     Vectorized map with chunking to reduce memory usage
     """
 
-    vf = jax.jit(jax.vmap(func))
+    vf = jax.jit(jax.vmap(func, in_axes=in_axes))
 
-    def wrapper(*arg):
-        n = arg[0].shape[0]
-        num_chunks = (n + chunk_size - 1) // chunk_size
+    def wrapper(*args):
+        local_in_axes = in_axes
+
+        # If in_axes is a single integer (e.g. 0), broadcast it to all args
+        if isinstance(local_in_axes, int) or local_in_axes is None:
+            local_in_axes = (local_in_axes,) * len(args)
+        for ax in range(len(local_in_axes)):
+            if local_in_axes[ax] is not None:
+                n = args[ax].shape[local_in_axes[ax]]
+                break
         results = []
         for i in tqdm(range(0, n, chunk_size), disable=not prog_bar):
-            results.append(vf(*[a[i : i + chunk_size] for a in arg]))
-        return jnp.concatenate(results, axis=0)
+            chunk_args = []
+            for a, ax in zip(args, local_in_axes):
+                if ax is None:
+                    chunk_args.append(a)
+                else:
+                    chunk_args.append(jax.lax.slice_in_dim(a, i, min(i + chunk_size, n), axis=ax))
+
+            results.append(vf(*chunk_args))
+        return jnp.concatenate(results, axis=out_axis)
 
     return wrapper
 

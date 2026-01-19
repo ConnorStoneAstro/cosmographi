@@ -122,7 +122,7 @@ def two_tailed_p(chi2, df):
 def hdp_null_test(g: jnp.ndarray, s: jnp.ndarray):
     """
     exact (probability-ordering) two-sided p-value that the
-    PDF samples s (nsamp, nsim) arise from the same distribution as the
+    posterior samples s (nsamp, nsim) arise from the same distribution as the
     ground truth samples g (nsim,).
 
     Args:
@@ -151,8 +151,8 @@ def hdp_null_test(g: jnp.ndarray, s: jnp.ndarray):
     """
     nsamp, nsim = s.shape
     q = jnp.sum(s >= g, axis=0)
-    p = np.minimum(np.ones_like(q), (1.0 + q) / (nsamp + 1.0))
-    chi2 = -2 * jnp.sum(jnp.log(p))  # assuming p ~ U(0,1)
+    p = jnp.minimum(jnp.ones_like(q), (1.0 + q) / (nsamp + 1.0))
+    chi2 = -2 * jnp.sum(jnp.log(p))  # assuming p ~ U(0,1), then -2 log p ~ chi2_2
     p_value = two_tailed_p(chi2, df=2 * nsim)
     return p_value
 
@@ -170,6 +170,7 @@ def ball_null_test(key: jax.Array, g: jnp.ndarray, s: jnp.ndarray, T: int = 1000
         s: sampled parameters (nsamp, nsim, ndim)
 
     """
+    print("WARNING: Still testing ball_null_test implementation.")
     nsamp, nsim, ndim = s.shape
     m = jnp.mean(g, axis=0)
     std = jnp.std(g, axis=0)

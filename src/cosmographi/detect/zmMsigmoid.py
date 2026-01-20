@@ -11,7 +11,7 @@ class mSigmoidDetect(BaseDetect):
         self.threshold = Param(
             "threshold",
             threshold,
-            description="50%% detection threshold on distance modulus axis",
+            description="50%% detection threshold on apparent magnitude axis",
             units="mag",
         )
         self.scale = Param(
@@ -33,13 +33,13 @@ class mzSigmoidDetect(BaseDetect):
         self.t_b = Param(
             "t_b",
             t_b,
-            description="50%% detection threshold on distance modulus axis for z=0",
+            description="50%% detection threshold on apparent magnitude axis for z=0",
             units="mag",
         )
         self.t_m = Param(
             "t_m",
             t_m,
-            description="slope on distance modulus threshold relative to z",
+            description="slope on apparent magnitude threshold relative to z",
             units="mag",
         )
         self.s_b = Param(

@@ -2,7 +2,7 @@ import jax
 import jax.numpy as jnp
 
 from .base import BaseDetect
-from ... import utils
+from .. import utils
 from caskade import forward, Param
 
 

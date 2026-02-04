@@ -23,7 +23,7 @@ def _quad_table(n=100):
     return roots_legendre(n)
 
 
-def quad(f, a, b, n=100, args=()):
+def quad(f, a, b, n=100, args=(), argnum=0):
     """Numerical integration using Gauss-Legendre quadrature.
 
     Args:
@@ -37,11 +37,11 @@ def quad(f, a, b, n=100, args=()):
     """
     abscissa, weights = _quad_table(n)
     x = (abscissa + 1.0) * (b - a) / 2.0 + a
-    y = f(x, *args)
+    y = f(*args[:argnum], x, *args[argnum:])
     return jnp.sum(weights * y) * (b - a) / 2.0
 
 
-def log_quad(log_f, a, b, n=100, args=()):
+def log_quad(log_f, a, b, n=100, args=(), argnum=0):
     """Numerical integration of a log function using Gauss-Legendre quadrature.
 
     Args:
@@ -49,17 +49,19 @@ def log_quad(log_f, a, b, n=100, args=()):
         a: Lower limit of integration.
         b: Upper limit of integration.
         n: Number of points to use in the integration.
+        args: Tuple of arguments to pass to the function
+        argnum: Which argument to integrate over
 
     Returns:
         Approximation of the integral of exp(log_f) from a to b.
     """
     abscissa, weights = _quad_table(n)
     x = (abscissa + 1.0) * (b - a) / 2.0 + a
-    log_y = log_f(x, *args)
+    log_y = log_f(*args[:argnum], x, *args[argnum:])
     return jax.nn.logsumexp(jnp.log(weights) + log_y) + jnp.log((b - a) / 2.0)
 
 
-def gauss_rescale_integrate(f, a, b, mu, sigma, n=100, args=()):
+def gauss_rescale_integrate(f, a, b, mu, sigma, n=100, args=(), argnum=0):
     """
     integrate f from a to b using a rescaled coordinate y = invCDF(x) of a Gaussian described by mu and sigma
     """
@@ -71,12 +73,13 @@ def gauss_rescale_integrate(f, a, b, mu, sigma, n=100, args=()):
         return jax.scipy.stats.norm.cdf(x, loc=mu, scale=sigma)
 
     def integrand(y):
-        return f(x(y), *args) / jax.scipy.stats.norm.pdf(x(y), loc=mu, scale=sigma)
+        n = jax.scipy.stats.norm.pdf(x(y), loc=mu, scale=sigma)
+        return f(*args[:argnum], x(y), *args[argnum:]) / n
 
     return quad(integrand, y(a), y(b), n=n)
 
 
-def log_gauss_rescale_integrate(log_f, a, b, mu, sigma, n=100, args=()):
+def log_gauss_rescale_integrate(log_f, a, b, mu, sigma, n=100, args=(), argnum=0):
     """
     integrate f from a to b using a rescaled coordinate y = invCDF(x) of a Gaussian described by mu and sigma
     """
@@ -88,6 +91,7 @@ def log_gauss_rescale_integrate(log_f, a, b, mu, sigma, n=100, args=()):
         return jax.scipy.stats.norm.cdf(x, loc=mu, scale=sigma)
 
     def integrand(y):
-        return log_f(x(y), *args) - jax.scipy.stats.norm.logpdf(x(y), loc=mu, scale=sigma)
+        n = jax.scipy.stats.norm.logpdf(x(y), loc=mu, scale=sigma)
+        return log_f(*args[:argnum], x(y), *args[argnum:]) - n
 
     return log_quad(integrand, y(a), y(b), n=n)

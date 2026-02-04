@@ -130,6 +130,14 @@ class Cosmology(Module):
         return self.transverse_comoving_distance(z) * (1 + z)
 
     @forward
+    def distance_modulus(self, z):
+        """
+        Compute the distance modulus, which is: 5 * log10(luminosity_distance(z)) - 5
+        Units: mag.
+        """
+        return 5 * jnp.log10(self.luminosity_distance(z)) - 5
+
+    @forward
     def angular_diameter_distance(self, z):
         """
         Compute the angular diameter distance to redshift z. Units: Mpc.

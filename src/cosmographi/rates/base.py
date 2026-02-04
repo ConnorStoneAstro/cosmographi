@@ -2,8 +2,8 @@ import jax
 import jax.numpy as jnp
 from caskade import Module, forward
 
-from ...cosmology import Cosmology
-from ...utils import quad
+from ..cosmology import Cosmology
+from ..utils import quad
 
 
 class BaseSNRate(Module):
@@ -66,9 +66,9 @@ class BaseSNRate(Module):
         return z_vals, jnp.cumsum(p_vals) * dz
 
     @forward
-    def sample(self, key, shape):
+    def sample_z(self, key, shape):
         """
-        Sample supernovae from the rate distribution.
+        Sample supernovae redshift from the rate distribution.
         """
         z_vals, cdf = self.CDF()
         u = jax.random.uniform(key, shape)

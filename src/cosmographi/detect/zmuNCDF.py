@@ -1,8 +1,7 @@
-from caskade import Module, forward, Param
+from caskade import forward, Param
 import jax
-import jax.numpy as jnp
 from .base import BaseDetect
-from ...utils import int_Phi_N
+from ..utils import int_Phi_N
 
 
 class MuNCDFDetect(BaseDetect):

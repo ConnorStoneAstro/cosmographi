@@ -1,19 +1,17 @@
 import jax
-import jax.numpy as jnp
 
 from .base import BaseDetect
-from ... import utils
 from caskade import forward, Param
 
 
-class MuSigmoidDetect(BaseDetect):
+class mSigmoidDetect(BaseDetect):
 
     def __init__(self, threshold: float, scale: float = 1.0, **kwargs):
         super().__init__(**kwargs)
         self.threshold = Param(
             "threshold",
             threshold,
-            description="50%% detection threshold on distance modulus axis",
+            description="50%% detection threshold on apparent magnitude axis",
             units="mag",
         )
         self.scale = Param(
@@ -24,35 +22,24 @@ class MuSigmoidDetect(BaseDetect):
         )
 
     @forward
-    def log_prob(self, z, mu, threshold=None, scale=None):
-        return jax.nn.log_sigmoid(-(mu - threshold) / scale)
-
-    @forward
-    def logZ_norm(self, mean, sigma, threshold=None, scale=None):
-        s = jnp.maximum(sigma, scale)
-        mu = utils.midpoints(
-            jnp.minimum(mean, threshold) - 5 * s, jnp.maximum(mean, threshold) + 5 * s, 50
-        )
-        dmu = mu[1] - mu[0]
-        pg = jax.scipy.stats.norm.logpdf(mu, mean, sigma)
-        ps = self.log_prob(0, mu)
-        return jax.nn.logsumexp(pg + ps) + jnp.log(dmu)
+    def log_prob(self, z, m, threshold=None, scale=None):
+        return jax.nn.log_sigmoid(-(m - threshold) / scale)
 
 
-class MuZSigmoidDetect(BaseDetect):
+class mzSigmoidDetect(BaseDetect):
 
     def __init__(self, t_b: float, t_m: float, s_b: float = 1.0, s_m: float = 0.0, **kwargs):
         super().__init__(**kwargs)
         self.t_b = Param(
             "t_b",
             t_b,
-            description="50%% detection threshold on distance modulus axis for z=0",
+            description="50%% detection threshold on apparent magnitude axis for z=0",
             units="mag",
         )
         self.t_m = Param(
             "t_m",
             t_m,
-            description="slope on distance modulus threshold relative to z",
+            description="slope on apparent magnitude threshold relative to z",
             units="mag",
         )
         self.s_b = Param(
@@ -69,5 +56,5 @@ class MuZSigmoidDetect(BaseDetect):
         )
 
     @forward
-    def log_prob(self, z, mu, t_b=None, t_m=None, s_b=None, s_m=None):
-        return jax.nn.log_sigmoid(-(mu - (t_b + t_m * z)) / (s_b + s_m * z))
+    def log_prob(self, z, m, t_b=None, t_m=None, s_b=None, s_m=None):
+        return jax.nn.log_sigmoid(-(m - (t_b + t_m * z)) / (s_b + s_m * z))

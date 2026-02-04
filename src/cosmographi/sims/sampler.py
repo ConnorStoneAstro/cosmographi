@@ -1,4 +1,4 @@
-from caskade import Module
+from caskade import Module, forward
 import jax
 
 
@@ -11,6 +11,7 @@ class Sampler(Module):
         self.survey = survey
         self.detection = detection
 
+    @forward
     def sample(self, key, n_samples):
         # cosmological redshift
         key, subkey = jax.random.split(key)
@@ -20,17 +21,23 @@ class Sampler(Module):
         key, subkey = jax.random.split(key)
         obj_type = self.rates.sample_type(subkey, zc)
 
-        # Intrinsic light curve parameters
-        key, subkey = jax.random.split(key)
-        lc_params = self.source.sample_params(subkey, zc, obj_type)  # thinkmore, seems flimsy
-
         # Sample when SN peak occurs uniformly over survey duration
         key, subkey = jax.random.split(key)
         times = self.survey.sample_times(subkey, n_samples)
 
+        # sample hosts
+
         # Sample SN positions within survey footprint
         key, subkey = jax.random.split(key)
         positions = self.survey.sample_positions(subkey, n_samples)
+
+        # Set source zc, and obj_type before sampling params
+
+        # Intrinsic light curve parameters
+        key, subkey = jax.random.split(key)
+        self.source.sample_lightcurve_params(
+            subkey
+        )  # thinkmore, seems flimsy. Maybe fill own live params
 
         # Sample observation conditions (band, observation time, etc.)
         key, subkey = jax.random.split(key)
@@ -49,9 +56,7 @@ class Sampler(Module):
 
         # Compute true fluxes
         key, subkey = jax.random.split(key)
-        F = self.source.fluxes(
-            subkey, z, mu, obj_type, lc_params, obs_conditions
-        )  # thinkmore, seems flimsy
+        F = self.source.fluxes(subkey, z, mu, obj_type, obs_conditions)  # thinkmore, seems flimsy
 
         # Sample observed fluxes (add observational noise)
         key, subkey = jax.random.split(key)
@@ -65,7 +70,6 @@ class Sampler(Module):
             "zc": zc,
             "z": z,
             "obj_type": obj_type,
-            "lc_params": lc_params,
             "times": times,
             "positions": positions,
             "obs_conditions": obs_conditions,

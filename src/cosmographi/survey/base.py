@@ -1,4 +1,5 @@
 from caskade import Module
+from ..filters import Filters
 
 
 class BaseSurvey(Module):
@@ -13,14 +14,18 @@ class BaseSurvey(Module):
     attributes.
     """
 
-    def __init__(self, name=None):
+    def __init__(self, filters: Filters, name=None):
         super().__init__(name)
+        self.filters = filters
 
-    def was_observed(self, ra, dec, time):
-        raise NotImplementedError("Subclasses must implement this method.")
 
-    def observation_conditions(self, ra, dec, time):
-        raise NotImplementedError("Subclasses must implement this method.")
+class TimeDomainSurvey(BaseSurvey):
+    """
+    Class for representing time-domain astronomical surveys.
 
-    def match_observations(self, ra, dec, start, end):
-        raise NotImplementedError("Subclasses must implement this method.")
+    This class extends the BaseSurvey to include methods specific to time-domain
+    observations, such as sampling observation times.
+    """
+
+    def __init__(self, filters: Filters, name=None):
+        super().__init__(filters, name)

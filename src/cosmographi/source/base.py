@@ -1,8 +1,6 @@
 from caskade import Module, forward, Param
-import jax.numpy as jnp
 
 from ..cosmology import Cosmology
-from ..filters import Filters
 from ..utils import flux
 
 
@@ -15,10 +13,10 @@ class BaseSource(Module):
     relevant to all source types.
     """
 
-    def __init__(self, cosmology: Cosmology, filters: Filters, name=None):
+    def __init__(self, cosmology: Cosmology, z=None, name=None):
         super().__init__(name)
         self.cosmology = cosmology
-        self.filters = filters
+        self.z = Param("z", z, description="Redshift", units="dimensionless")
 
 
 class StaticSource(BaseSource):
@@ -29,15 +27,15 @@ class StaticSource(BaseSource):
     It can be extended to include properties and methods specific to static sources.
     """
 
-    def __init__(
-        self, cosmology: Cosmology, filters: Filters, w: jnp.array, LD: jnp.array, name=None
-    ):
-        super().__init__(cosmology, filters, name)
-        self.w = w  # in nm
-        self.LD = Param("LD", LD, description="Luminosity density", units="erg/s/nm")
+    @forward
+    def luminosity_density(self, w):
+        """
+        Calculate the luminosity density at a given wavelength in units of erg/s/nm.
+        """
+        raise NotImplementedError("Subclasses must implement the luminosity_density method.")
 
     @forward
-    def mag_AB(self, z, band, LD):
+    def mag_AB(self, band, z, LD):
         """
         Calculate the AB magnitude in a given band at redshift z.
         """
@@ -54,19 +52,26 @@ class TransientSource(BaseSource):
     It can be extended to include properties and methods specific to transient sources.
     """
 
-    def __init__(self, cosmology: Cosmology, filters: Filters, w: jnp.array, name=None):
-        super().__init__(cosmology, filters, name)
-        self.w = w  # in nm
+    def __init__(self, cosmology: Cosmology, z=None, t0=None, name=None):
+        super().__init__(cosmology, z=z, name=name)
+
+        self.t0 = Param(
+            "t0",
+            t0,
+            description="Light curve reference time (observer frame)",
+            units="seconds",
+        )  # fixme think about observer frame vs rest frame time factor of (1+z)
 
     @forward
-    def luminosity_density(self, p):
+    def luminosity_density(self, w, t):
         """
-        Calculate the luminosity density at a given wavelength in units of erg/s/nm.
+        Calculate the luminosity density at a given wavelength in units of
+        erg/s/nm and time in units of seconds.
         """
         raise NotImplementedError("Subclasses must implement the luminosity_density method.")
 
     @forward
-    def mag_AB(self, z, band, p):
+    def mag_AB(self, band, z, p):
         """
         Calculate the AB magnitude in a given band at redshift z.
         """

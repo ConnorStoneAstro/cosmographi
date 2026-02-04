@@ -14,7 +14,7 @@ def luminosity(w1, w2, w, LD):
     w2 : float
         Upper bound of the wavelength range (in nm).
     w : jnp.ndarray
-        Wavelength array (in nm).
+        Wavelength array (in nm) rest frame.
     LD : jnp.ndarray
         Luminosity density array corresponding to w (in erg/s/nm).
     """
@@ -41,7 +41,7 @@ def f_lambda(z, DL, w, LD):
     DL : float
         Luminosity distance at redshift z (in Mpc).
     w : jnp.ndarray
-        Wavelength array (in nm).
+        Wavelength array (in nm) rest frame.
     LD : jnp.ndarray
         Luminosity density array corresponding to w (in erg/s/nm).
     """
@@ -67,7 +67,7 @@ def f_nu(z, DL, w, LD):
     DL : float
         Luminosity distance at redshift z (in Mpc).
     w : jnp.ndarray
-        Wavelength array (in nm).
+        Wavelength array (in nm) rest frame.
     LD : jnp.ndarray
         Luminosity density array corresponding to w (in erg/s/nm).
     """
@@ -93,7 +93,7 @@ def F_lambda_band(z, DL, w_b, T_b, w, LD):
     T_b : jnp.ndarray
         Transmission array for the bandpass corresponding to w_b (unitless).
     w : jnp.ndarray
-        Wavelength array (in nm).
+        Wavelength array (in nm) rest frame.
     LD : jnp.ndarray
         Luminosity density array corresponding to w (in erg/s/nm).
     """
@@ -114,11 +114,11 @@ def F_nu_band(z, DL, w_b, T_b, w, LD):
     DL : float
         Luminosity distance at redshift z (in Mpc).
     w_b : jnp.ndarray
-        Wavelength array for the bandpass (in nm).
+        Wavelength array for the bandpass (in nm) observer frame.
     T_b : jnp.ndarray
         Transmission array for the bandpass corresponding to w_b (unitless).
     w : jnp.ndarray
-        Wavelength array (in nm).
+        Wavelength array (in nm) rest frame.
     LD : jnp.ndarray
         Luminosity density array corresponding to w (in erg/s/nm).
     """
@@ -145,7 +145,7 @@ def f_lambda_band_energy(z, DL, w_b, T_b, w, LD):
     T_b : jnp.ndarray
         Transmission array for the bandpass corresponding to w_b (unitless).
     w : jnp.ndarray
-        Wavelength array (in nm).
+        Wavelength array (in nm) rest frame.
     LD : jnp.ndarray
         Luminosity density array corresponding to w (in erg/s/nm).
     """
@@ -165,11 +165,11 @@ def f_nu_band_energy(z, DL, w_b, T_b, w, LD):
     DL : float
         Luminosity distance at redshift z (in Mpc).
     w_b : jnp.ndarray
-        Wavelength array for the bandpass (in nm).
+        Wavelength array for the bandpass (in nm) observer frame.
     T_b : jnp.ndarray
         Transmission array for the bandpass corresponding to w_b (unitless).
     w : jnp.ndarray
-        Wavelength array (in nm).
+        Wavelength array (in nm) rest frame.
     LD : jnp.ndarray
         Luminosity density array corresponding to w (in erg/s/nm).
     """
@@ -191,11 +191,11 @@ def f_lambda_band_photons(z, DL, w_b, T_b, w, LD):
     DL : float
         Luminosity distance at redshift z (in Mpc).
     w_b : jnp.ndarray
-        Wavelength array for the bandpass (in nm).
+        Wavelength array for the bandpass (in nm) observer frame.
     T_b : jnp.ndarray
         Transmission array for the bandpass corresponding to w_b (unitless).
     w : jnp.ndarray
-        Wavelength array (in nm).
+        Wavelength array (in nm) rest frame.
     LD : jnp.ndarray
         Luminosity density array corresponding to w (in erg/s/nm).
     """
@@ -219,11 +219,11 @@ def f_nu_band_photons(z, DL, w_b, T_b, w, LD):
     DL : float
         Luminosity distance at redshift z (in Mpc).
     w_b : jnp.ndarray
-        Wavelength array for the bandpass (in nm).
+        Wavelength array for the bandpass (in nm) observer frame.
     T_b : jnp.ndarray
         Transmission array for the bandpass corresponding to w_b (unitless).
     w : jnp.ndarray
-        Wavelength array (in nm).
+        Wavelength array (in nm) rest frame.
     LD : jnp.ndarray
         Luminosity density array corresponding to w (in erg/s/nm).
     """
@@ -253,7 +253,7 @@ def mag_AB(z, DL, w_b, T_b, w, LD):
     T_b : jnp.ndarray
         Transmission array for the bandpass corresponding to w_b (unitless).
     w : jnp.ndarray
-        Wavelength array (in nm).
+        Wavelength array (in nm) rest frame.
     LD : jnp.ndarray
         Luminosity density array corresponding to w (in erg/s/nm).
     """

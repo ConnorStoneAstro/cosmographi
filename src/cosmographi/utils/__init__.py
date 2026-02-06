@@ -13,7 +13,7 @@ from .integration import mid, quad, log_quad, gauss_rescale_integrate, log_gauss
 from .interpolation import WLS, gaussian_kernel, RBF_weights, RBF_init, RBF
 from .plots import corner_plot
 from .loading import load_salt2_surface, load_salt2_colour_law
-from .extinction import fp99_extinction_law, fp99_extinction_law_knots
+from .extinction import fp99_extinction_law, fp99_extinction_law_knots, calzetti00_extinction_law
 
 __all__ = (
     "constants",
@@ -42,4 +42,5 @@ __all__ = (
     "load_salt2_colour_law",
     "fp99_extinction_law",
     "fp99_extinction_law_knots",
+    "calzetti00_extinction_law",
 )

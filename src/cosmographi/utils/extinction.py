@@ -124,3 +124,57 @@ def fp99_extinction_law(w, A_V, R_V, knots=None):
     extinction_mag = A_V * (1.0 + k_vals / R_V)
 
     return extinction_mag
+
+
+def calzetti00_extinction_law(wave, A_V, R_V=4.05):
+    """
+    Calculate dust attenuation using the Calzetti (2000) starburst attenuation curve.
+
+    The curve is defined for the range 0.12 to 2.2 microns (1200 - 22000 Angstroms).
+    The standard R_V value for this curve is 4.05 +/- 0.80.
+
+    Parameters
+    ----------
+    wave : array_like
+        Wavelengths (nm) rest frame.
+    A_V : float
+        The total attenuation in the V band (A_V).
+    R_V : float, optional
+        The ratio of total to selective attenuation A_V / E(B-V).
+        The standard value for starburst galaxies is 4.05.
+
+    Returns
+    -------
+    np.ndarray
+        Attenuation A_lambda at the input wavelengths.
+    """
+    # Convert wavelength to inverse microns (x)
+    x = 1.0e3 / wave
+
+    # Calculate k(lambda)
+    # k(lambda) = A(lambda) / E(B-V)
+    # The curve is typically defined in two regimes: UV and Optical/IR
+    # Regime 1: Optical/NIR (0.63 micron <= lambda <= 2.2 micron)
+    # 1/2.2 <= x <= 1/0.63  =>  0.45 <= x <= 1.58
+    # However, standard implementations often apply this for all x < 1.58 (lambda > 6300 A)
+    # Regime 2: UV (0.12 micron <= lambda < 0.63 micron)
+    # 1.58 < x <= 8.33
+    mask_ir = x < 1.5873  # 1.0 / 0.63
+    k_vals = (
+        2.659
+        * jnp.where(
+            mask_ir,
+            (-1.857 + 1.040 * x),
+            (-2.156 + 1.509 * x - 0.198 * x**2 + 0.011 * x**3),
+        )
+        + R_V
+    )
+
+    # Calculate Extinction A_lambda
+    # A_lambda = k(lambda) * E(B-V)
+    # Since A_V = R_V * E(B-V), we have E(B-V) = A_V / R_V
+    # Therefore: A_lambda = k(lambda) * (A_V / R_V)
+
+    extinction_mag = k_vals * (A_V / R_V)
+
+    return extinction_mag

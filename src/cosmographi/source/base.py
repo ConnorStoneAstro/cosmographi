@@ -2,6 +2,7 @@ from caskade import Module, forward, Param
 
 from ..cosmology import Cosmology
 from ..utils import flux
+from ..utils.constants import c_nm
 
 
 class BaseSource(Module):
@@ -35,13 +36,16 @@ class StaticSource(BaseSource):
         raise NotImplementedError("Subclasses must implement the luminosity_density method.")
 
     @forward
-    def mag_AB(self, band, z, LD):
-        """
-        Calculate the AB magnitude in a given band at redshift z.
-        """
+    def flux_density(self, w, z):
+        ld = self.luminosity_density(w)
         DL = self.cosmology.luminosity_distance(z)
-        w_b, T_b = self.filters[band]
-        return flux.mag_AB(z, DL, w_b, T_b, self.w, LD)
+        return flux.f_lambda(z, DL, w, ld)
+
+    @forward
+    def flux_density_frequency(self, nu):
+        w = c_nm / nu
+        f_l = self.flux_density(w)
+        return flux.f_nu(w, f_l)[1]
 
 
 class TransientSource(BaseSource):
@@ -67,16 +71,51 @@ class TransientSource(BaseSource):
         """
         Calculate the luminosity density at a given wavelength in units of
         erg/s/nm and time in units of seconds.
+
+        Parameters
+        ----------
+        w : jnp.ndarray
+            Wavelength array (nm) rest frame
+        t : jnp.ndarray
+            Time of observation (days) rest frame
         """
         raise NotImplementedError("Subclasses must implement the luminosity_density method.")
 
     @forward
-    def mag_AB(self, band, z, p):
+    def flux_density(self, w, t, z):
         """
-        Calculate the AB magnitude in a given band at redshift z.
-        """
-        w, LD = self.luminosity_density(p)
-        DL = self.cosmology.luminosity_distance(z)
-        w_b, T_b = self.filters[band]
+        Calculate the observed spectral flux density at a given redshift z.
+        This method should account for z effects on the flux density.
 
-        return flux.mag_AB(z, DL, w_b, T_b, w, LD)
+        Here we use:
+
+        $$f_{\\lambda}^{obs}(\\lambda_{obs}) = \\frac{1}{(1 + z) D_L^2}L_{\\lambda}^{rest}(\\lambda_{obs} / (1 + z))$$
+
+        where $D_L$ is the luminosity distance in cm. $\\lambda_{obs}$ is the
+        observed wavelength. $f_{\\lambda}^{obs}$ is the observed flux density (erg/s/cm^2/nm), and
+        $L_{\\lambda}^{rest}$ is the rest-frame luminosity density (erg/s/nm).
+
+        Parameters
+        ----------
+        w : jnp.ndarray
+            Wavelength array (nm) observer frame.
+        t : jnp.ndarray or float
+            Time of observation (days) observer frame
+
+        Returns
+        -------
+        spectral_flux_density : jnp.ndarray
+            Spectral flux density in (erg/s/cm^2/nm)
+        """
+        w = flux.observer_to_rest_wavelength(w, z)
+        t = flux.observer_to_rest_time(t, z)
+        ld = self.luminosity_density(w, t)
+        DL = self.cosmology.luminosity_distance(z)
+        return flux.f_lambda(z, DL, ld)
+
+    @forward
+    def flux_density_frequency(self, nu, t):
+        w = c_nm / nu
+        f_l = self.flux_density(w, t)
+        _, f_nu = flux.f_nu(w, f_l)
+        return f_nu

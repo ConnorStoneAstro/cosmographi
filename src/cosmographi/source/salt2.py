@@ -6,7 +6,7 @@ from caskade import Param, forward
 import numpy as np
 
 from .base import TransientSource
-from ..utils import load_salt2_surface, load_salt2_colour_law
+from ..utils import load_salt2_surface, load_salt2_colour_law, flux
 
 
 class SALT2(TransientSource):
@@ -26,7 +26,11 @@ class SALT2(TransientSource):
         self.x0 = Param("x0", x0, shape=(), description="Light curve amplitude")
         self.x1 = Param("x1", x1, shape=(), description="Light curve stretch")
         self.c = Param("c", c, shape=(), description="colour")
-        self.M = Param("M", M, description="Phase and wavelength dependent SALT2 model surface")
+        self.M = Param(
+            "M",
+            M,
+            description="Phase and wavelength dependent SALT2 model surface (luminosity density)",
+        )
         self.CL = Param("CL", CL, description="Phase independent SALT2 colour law")
         self.phase_nodes = phase_nodes  # Phase nodes of M
         self.wavelength_nodes = wavelength_nodes  # wavelength nodes of M and CL
@@ -37,7 +41,19 @@ class SALT2(TransientSource):
         return tuple(self.phase_sampler(p, self.phase_nodes, M[i]) for i in range(M.shape[0]))
 
     @forward
-    def luminosity_density(self, w, t, t0, x0, x1, c, CL):
+    def luminosity_density(self, w, t, t0, x0, x1, c, CL, z):
+        """
+        Calculate the luminosity density at a given wavelength in units of
+        erg/s/nm and time in units of seconds.
+
+        Parameters
+        ----------
+        w : jnp.ndarray
+            Wavelength array (nm) rest frame
+        t : jnp.ndarray
+            Time of observation (days) rest frame
+        """
+        t0 = flux.observer_to_rest_time(t0, z)
         M0, M1 = self.get_model_basis(t - t0)
         f_l = x0 * (M0 + x1 * M1) * jnp.exp(c * CL)
         return jnp.interp(w, self.wavelength_nodes, f_l)

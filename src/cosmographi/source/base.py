@@ -67,7 +67,7 @@ class TransientSource(BaseSource):
         )  # fixme think about observer frame vs rest frame time factor of (1+z)
 
     @forward
-    def luminosity_density(self, w, t):
+    def luminosity_density(self, w, p):
         """
         Calculate the luminosity density at a given wavelength in units of
         erg/s/nm and time in units of seconds.
@@ -76,8 +76,8 @@ class TransientSource(BaseSource):
         ----------
         w : jnp.ndarray
             Wavelength array (nm) rest frame
-        t : jnp.ndarray
-            Time of observation (days) rest frame
+        p : jnp.ndarray
+            Time (phase) of observation (days) rest frame
         """
         raise NotImplementedError("Subclasses must implement the luminosity_density method.")
 
@@ -108,8 +108,8 @@ class TransientSource(BaseSource):
             Spectral flux density in (erg/s/cm^2/nm)
         """
         w = flux.observer_to_rest_wavelength(w, z)
-        t = flux.observer_to_rest_time(t, z)
-        ld = self.luminosity_density(w, t)
+        p = flux.observer_to_rest_time(t, z)
+        ld = self.luminosity_density(w, p)
         DL = self.cosmology.luminosity_distance(z)
         return flux.f_lambda(z, DL, ld)
 

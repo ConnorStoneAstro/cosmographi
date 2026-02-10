@@ -2,6 +2,7 @@ import jax.numpy as jnp
 from caskade import Param, forward
 from .base import StaticSource, TransientSource
 from . import func
+from ..utils import flux
 
 
 class StaticBlackbody(StaticSource):
@@ -57,6 +58,7 @@ class TransientBlackbody(TransientSource):
         )
 
     @forward
-    def luminosity_density(self, w, t, T, R, N, t0, sigma):
-        scale = jnp.exp(-0.5 * ((t - t0) / sigma) ** 2)
+    def luminosity_density(self, w, p, T, R, N, t0, sigma, z):
+        p0 = flux.observer_to_rest_time(t0, z)
+        scale = jnp.exp(-0.5 * ((p - p0) / sigma) ** 2)
         return func.blackbody_luminosity_density(w, T, R, N) * scale

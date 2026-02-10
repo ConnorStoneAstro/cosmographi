@@ -4,8 +4,8 @@ from .base import BaseSourceEffect
 from ...utils import calzetti00_extinction_law
 
 
-class HostCalzetti00Extinction(BaseSourceEffect):
-    def __init__(self, A_V_c00h=None, R_V_c00h=4.05, name=None):
+class HostExtinction_Calzetti00(BaseSourceEffect):
+    def __init__(self, A_V_c00h=None, R_V_c00h=4.05, c00h_active=True, name=None):
         super().__init__(name)
         self.A_V_c00h = Param(
             "A_V_c00h",
@@ -19,9 +19,12 @@ class HostCalzetti00Extinction(BaseSourceEffect):
             shape=(),
             description="Calzetti 2000 extinction curve shape parameter",
         )
+        self.c00h_active = c00h_active
 
     @forward
     def luminosity_density(self, w, *args, A_V_c00h=None, R_V_c00h=None, **kwargs):
         ld = super().luminosity_density(w, *args, **kwargs)
+        if not self.c00h_active:
+            return ld
         ext = calzetti00_extinction_law(w, A_V_c00h, R_V_c00h)
         return ld * 10 ** (-0.4 * ext)

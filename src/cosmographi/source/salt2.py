@@ -41,7 +41,7 @@ class SALT2(TransientSource):
         return tuple(self.phase_sampler(p, self.phase_nodes, M[i]) for i in range(M.shape[0]))
 
     @forward
-    def luminosity_density(self, w, t, t0, x0, x1, c, CL, z):
+    def luminosity_density(self, w, p, t0, x0, x1, c, CL, z):
         """
         Calculate the luminosity density at a given wavelength in units of
         erg/s/nm and time in units of seconds.
@@ -50,11 +50,11 @@ class SALT2(TransientSource):
         ----------
         w : jnp.ndarray
             Wavelength array (nm) rest frame
-        t : jnp.ndarray
-            Time of observation (days) rest frame
+        p : jnp.ndarray
+            Time (phase) of observation (days) rest frame
         """
-        t0 = flux.observer_to_rest_time(t0, z)
-        M0, M1 = self.get_model_basis(t - t0)
+        p0 = flux.observer_to_rest_time(t0, z)
+        M0, M1 = self.get_model_basis(p - p0)
         f_l = x0 * (M0 + x1 * M1) * jnp.exp(c * CL)
         return jnp.interp(w, self.wavelength_nodes, f_l)
 

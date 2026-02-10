@@ -5,7 +5,6 @@ import pytest
 import cosmographi as cg
 
 
-
 def test_quad_integrate():
 
     f = lambda x: x**2

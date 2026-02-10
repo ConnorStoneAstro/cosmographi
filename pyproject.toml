@@ -63,7 +63,8 @@ line-length = 100 # Same as Black.
 # McCabe complexity (`C901`) by default.
 select = ["E4", "E7", "E9", "F"]
 # E731 is no assigning to a lambda
-ignore = ["E731"]
+# E741 is ambiguous variable names
+ignore = ["E731", "E741"]
 
 # Allow fix for all enabled rules (when `--fix`) is provided.
 fixable = ["ALL"]

@@ -11,9 +11,9 @@ def source_factory(base_source: BaseSource, *effects: tuple[BaseSourceEffect]):
     the "base_source" to the observer on the right.
     """
     assert isinstance(base_source, BaseSource), "base_source should be a Source model"
-    assert all(
-        isinstance(eff, BaseSourceEffect) for eff in effects
-    ), "Effects should be SourceEffects"
+    assert all(isinstance(eff, BaseSourceEffect) for eff in effects), (
+        "Effects should be SourceEffects"
+    )
 
     # Name the class dynamically for better debugging
     name = f"{base_source.__name__}"

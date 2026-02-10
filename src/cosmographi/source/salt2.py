@@ -10,7 +10,6 @@ from ..utils import load_salt2_surface, load_salt2_colour_law, flux
 
 
 class SALT2(TransientSource):
-
     def __init__(
         self,
         x0=None,
@@ -68,9 +67,9 @@ class SALT2(TransientSource):
         )
 
         assert np.all(phase0 == phase1), "Phase gridding does not match for M0 and M1!"
-        assert np.all(
-            wavelength0 == wavelength1
-        ), "Wavelength gridding does not match for M0 and M1!"
+        assert np.all(wavelength0 == wavelength1), (
+            "Wavelength gridding does not match for M0 and M1!"
+        )
         # fixme convert from spectral flux density to luminosity density (should just be 4 * pi * 10pc)
         self.M = np.stack((M0, M1))
         self.phase_nodes = jnp.array(phase0)

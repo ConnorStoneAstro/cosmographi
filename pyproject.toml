@@ -56,7 +56,6 @@ local_scheme = "no-local-version"
 
 [tool.ruff]
 line-length = 100 # Same as Black.
-ignore = ["E741"]
 
 [tool.ruff.lint]
 # Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`) codes by default.

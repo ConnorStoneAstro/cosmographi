@@ -82,7 +82,7 @@ def mala(
         samples = samples.at[t].set(x)  # (N, C, D)
 
         if progress:
-            it.set_postfix(acc_rate=f"{accept[:t+1].mean():0.2f}")
+            it.set_postfix(acc_rate=f"{accept[: t + 1].mean():0.2f}")
 
     return samples
 

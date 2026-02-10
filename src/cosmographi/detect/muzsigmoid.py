@@ -7,7 +7,6 @@ from caskade import forward, Param
 
 
 class MuSigmoidDetect(BaseDetect):
-
     def __init__(self, threshold: float, scale: float = 1.0, **kwargs):
         super().__init__(**kwargs)
         self.threshold = Param(
@@ -40,7 +39,6 @@ class MuSigmoidDetect(BaseDetect):
 
 
 class MuZSigmoidDetect(BaseDetect):
-
     def __init__(self, t_b: float, t_m: float, s_b: float = 1.0, s_m: float = 0.0, **kwargs):
         super().__init__(**kwargs)
         self.t_b = Param(

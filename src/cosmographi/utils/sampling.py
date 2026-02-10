@@ -2,7 +2,6 @@ import jax.numpy as jnp
 import jax
 import numpy as np
 from tqdm import tqdm
-import numpy as np
 from scipy.stats.qmc import LatinHypercube
 
 

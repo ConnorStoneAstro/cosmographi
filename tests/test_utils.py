@@ -4,7 +4,6 @@ import pytest
 
 import cosmographi as cg
 
-from scipy.integrate import quad
 
 
 def test_quad_integrate():

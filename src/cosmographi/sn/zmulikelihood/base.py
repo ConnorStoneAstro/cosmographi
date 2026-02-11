@@ -1,7 +1,7 @@
 from caskade import Module, forward, Param
 from ...cosmology import Cosmology
-from ..rates import CombinedSNRate
-from ..detect import BaseDetect
+from ...rates import CombinedSNRate
+from ...detect import BaseDetect
 from ... import utils
 import jax
 import jax.numpy as jnp

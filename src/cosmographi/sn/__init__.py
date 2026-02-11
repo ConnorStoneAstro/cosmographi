@@ -1,8 +1,8 @@
 from .zmulikelihood import ZMuLikelihood
-from .lightcurve import SNAbsMagGaussian, BaseLightCurve
+# from .lightcurve import SNAbsMagGaussian, BaseLightCurve
 
 __all__ = (
     "ZMuLikelihood",
-    "SNAbsMagGaussian",
-    "BaseLightCurve",
+    # "SNAbsMagGaussian",
+    # "BaseLightCurve",
 )

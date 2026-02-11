@@ -1,3 +1,9 @@
+astropy
+caskade
+interpax
 jax
+matplotlib
 numpy
+pandas
 scipy
+tqdm

@@ -1,8 +1,6 @@
 import jax.numpy as jnp
 import jax
 from tqdm import tqdm
-from sklearn.preprocessing import PolynomialFeatures
-from sklearn.linear_model import LinearRegression
 from itertools import combinations_with_replacement
 
 

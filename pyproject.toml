@@ -4,11 +4,11 @@ build-backend = "hatchling.build"
 
 [project]
 name = "cosmographi"
-dynamic = ["dependencies", "version"]
+dynamic = ["version"]
 authors = [{ name = "Connor Stone", email = "connorstone628@gmail.com" }]
 description = "Cosmographi: Bayesian Dark Energy Equation of State cosmography"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.12"
 license = { file = "LICENSE" }
 keywords = [
         "dark energy",
@@ -26,6 +26,17 @@ classifiers = [
         "Operating System :: OS Independent",
         "Programming Language :: Python :: 3",
 ]
+dependencies = [
+        "astropy>=7.2.0",
+        "caskade>=0.15.1",
+        "interpax>=0.3.12",
+        "jax>=0.5.3",
+        "matplotlib>=3.10.8",
+        "numpy>=1.26.4",
+        "pandas>=2.3.3",
+        "scipy>=1.17.0",
+        "tqdm>=4.67.3",
+]
 
 [project.urls]
 Homepage = "https://github.com/ConnorStoneAstro/cosmographi"
@@ -41,9 +52,6 @@ dev = [
         "pre-commit>=3.6,<4",
         "ruff>=0.15.0",
 ]
-
-[tool.hatch.metadata.hooks.requirements_txt]
-files = ["requirements.txt"]
 
 [tool.hatch.version]
 source = "vcs"

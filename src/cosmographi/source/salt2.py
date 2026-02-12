@@ -11,7 +11,6 @@ from ..utils.constants import Mpc_to_cm
 
 
 class SALT2_2021(TransientSource):
-
     def __init__(
         self,
         x0=None,
@@ -38,6 +37,7 @@ class SALT2_2021(TransientSource):
         self.CL = Param(
             "CL", CL, shape=(None,), dynamic=False, description="Phase independent SALT2 colour law"
         )
+
         self.phase_nodes = phase_nodes  # Phase nodes of M
         self.wavelength_nodes = wavelength_nodes  # wavelength nodes of M and CL
         self.phase_sampler = jax.vmap(jnp.interp, in_axes=(None, None, 1), out_axes=-1)
@@ -74,9 +74,9 @@ class SALT2_2021(TransientSource):
         )
 
         assert np.all(phase0 == phase1), "Phase gridding does not match for M0 and M1!"
-        assert np.all(
-            wavelength0 == wavelength1
-        ), "Wavelength gridding does not match for M0 and M1!"
+        assert np.all(wavelength0 == wavelength1), (
+            "Wavelength gridding does not match for M0 and M1!"
+        )
         # convert from spectral flux density to luminosity density (should just be 4 * pi * 10pc^2)
         self.M = np.stack((M0, M1)) * (4 * np.pi * (10 * 1e-6 * Mpc_to_cm) ** 2)
         self.phase_nodes = jnp.array(phase0)

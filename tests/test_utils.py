@@ -66,7 +66,7 @@ def test_midpoints():
 def test_int_Phi_N(mu1, mu2):
     sigma1 = 0.5
     sigma2 = 0.3
-    Phi = lambda x: jax.scipy.stats.norm.cdf(-(x - mu1) / sigma1)
+    Phi = lambda x: jax.scipy.stats.norm.cdf((x - mu1) / sigma1)
     N = lambda x: jax.scipy.stats.norm.pdf(x, loc=mu2, scale=sigma2)
     res_quad = cg.utils.quad(lambda x: Phi(x) * N(x), -10, 10, 1000)
     res_int = cg.utils.int_Phi_N(mu1, sigma1, mu2, sigma2)

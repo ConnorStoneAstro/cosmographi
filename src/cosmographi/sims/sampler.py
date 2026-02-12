@@ -35,9 +35,7 @@ class Sampler(Module):
 
         # Intrinsic light curve parameters
         key, subkey = jax.random.split(key)
-        self.source.sample_lightcurve_params(
-            subkey
-        )  # thinkmore, seems flimsy. Maybe fill own live params
+        self.source.sample_lightcurve_params(subkey)
 
         # Sample observation conditions (band, observation time, etc.)
         key, subkey = jax.random.split(key)

@@ -19,6 +19,12 @@ class BaseSource(Module):
         self.cosmology = cosmology
         self.z = Param("z", z, description="Redshift", units="dimensionless")
 
+    def luminosity_density(self, w):
+        raise NotImplementedError("Please use a subclass of BaseSource")
+
+    def spectral_flux_density(self, w):
+        raise NotImplementedError("Please use a subclass of BaseSource")
+
 
 class StaticSource(BaseSource):
     """
@@ -36,15 +42,15 @@ class StaticSource(BaseSource):
         raise NotImplementedError("Subclasses must implement the luminosity_density method.")
 
     @forward
-    def flux_density(self, w, z):
+    def spectral_flux_density(self, w, z):
         ld = self.luminosity_density(w)
         DL = self.cosmology.luminosity_distance(z)
         return flux.f_lambda(z, DL, w, ld)
 
     @forward
-    def flux_density_frequency(self, nu):
+    def spectral_flux_density_frequency(self, nu):
         w = c_nm / nu
-        f_l = self.flux_density(w)
+        f_l = self.spectral_flux_density(w)
         return flux.f_nu(w, f_l)[1]
 
 
@@ -56,15 +62,24 @@ class TransientSource(BaseSource):
     It can be extended to include properties and methods specific to transient sources.
     """
 
-    def __init__(self, cosmology: Cosmology, z=None, t0=None, name=None):
+    def __init__(self, cosmology: Cosmology, z=None, t0=None, p_range=(0, 1), name=None):
         super().__init__(cosmology, z=z, name=name)
 
         self.t0 = Param(
             "t0",
             t0,
             description="Light curve reference time (observer frame)",
-            units="seconds",
-        )  # fixme think about observer frame vs rest frame time factor of (1+z)
+            units="days",
+        )
+        self.p_range = p_range  # Time (phase) range for transient relative to t0, rest frame
+
+    @forward
+    def visible(self, t, t0, z):
+        t_range = (
+            flux.rest_to_observer_time(self.p_range[0], z),
+            flux.rest_to_observer_time(self.p_range[1], z),
+        )
+        return (t >= t0 + t_range[0]) & (t <= t0 + t_range[1])
 
     @forward
     def luminosity_density(self, w, p):
@@ -82,17 +97,17 @@ class TransientSource(BaseSource):
         raise NotImplementedError("Subclasses must implement the luminosity_density method.")
 
     @forward
-    def flux_density(self, w, t, z):
+    def spectral_flux_density(self, w, t, z):
         """
         Calculate the observed spectral flux density at a given redshift z.
-        This method should account for z effects on the flux density.
+        This method should account for z effects on the spectral flux density.
 
         Here we use:
 
         $$f_{\\lambda}^{obs}(\\lambda_{obs}) = \\frac{1}{(1 + z) D_L^2}L_{\\lambda}^{rest}(\\lambda_{obs} / (1 + z))$$
 
         where $D_L$ is the luminosity distance in cm. $\\lambda_{obs}$ is the
-        observed wavelength. $f_{\\lambda}^{obs}$ is the observed flux density (erg/s/cm^2/nm), and
+        observed wavelength. $f_{\\lambda}^{obs}$ is the observed spectral flux density (erg/s/cm^2/nm), and
         $L_{\\lambda}^{rest}$ is the rest-frame luminosity density (erg/s/nm).
 
         Parameters
@@ -114,8 +129,7 @@ class TransientSource(BaseSource):
         return flux.f_lambda(z, DL, ld)
 
     @forward
-    def flux_density_frequency(self, nu, t):
+    def spectral_flux_density_frequency(self, nu, t):
         w = c_nm / nu
-        f_l = self.flux_density(w, t)
-        _, f_nu = flux.f_nu(w, f_l)
-        return f_nu
+        f_l = self.spectral_flux_density(w, t)
+        return flux.f_nu(w, f_l)

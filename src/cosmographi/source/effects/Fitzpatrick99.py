@@ -1,11 +1,13 @@
 from caskade import Param, forward
 
 from .base import BaseSourceEffect
-from ...utils import fp99_extinction_law, fp99_extinction_law_knots
+from ...utils import fp99_extinction_law
 
 
 class HostExtinction_Fitzpatrick99(BaseSourceEffect):
     """
+
+    Applies the Fitzpatrick 1999 extinction law in the rest frame of the source.
 
     Citation
     --------
@@ -57,6 +59,8 @@ class HostExtinction_Fitzpatrick99(BaseSourceEffect):
 class MWExtinction_Fitzpatrick99(BaseSourceEffect):
     """
 
+    Applies the Fitzpatrick 1999 extinction law in the observer frame to a source.
+
     Citation
     --------
     @ARTICLE{1999PASP..111...63F,
@@ -96,8 +100,15 @@ class MWExtinction_Fitzpatrick99(BaseSourceEffect):
         self.f99mw_active = f99mw_active
 
     @forward
-    def flux_density(self, w, *args, A_V_f99h=None, R_V_f99h=None, **kwargs):
-        fd = super().flux_density(w, *args, **kwargs)
+    def EBV_to_AV(self, EBV, R_V_f99mw):
+        """
+        Convert E(B - V) into A_V using standard A_V = R_V * E(B - V) definition.
+        """
+        return EBV * R_V_f99mw
+
+    @forward
+    def spectral_flux_density(self, w, *args, A_V_f99h=None, R_V_f99h=None, **kwargs):
+        fd = super().spectral_flux_density(w, *args, **kwargs)
         if not self.f99mw_active:
             return fd
         ext = fp99_extinction_law(w, A_V_f99h, R_V_f99h)

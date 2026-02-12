@@ -5,8 +5,8 @@ import numpy as np
 def load_salt2_surface(surface_file):
     df = pd.read_csv(
         surface_file,
-        sep="\s+",
-        names=("phase", "wavelength", "fluxdensity"),
+        sep=r"\s+",
+        names=("phase", "wavelength", "flux"),
     )
     # 1. Get unique values for axes (sorted to ensure consistency)
     # This handles non-regular spacing automatically
@@ -34,5 +34,5 @@ def load_salt2_surface(surface_file):
 
 
 def load_salt2_colour_law(colour_file):
-    df = pd.read_csv(colour_file, sep="\s+", names=("wavelength", "dispersion"), comment="#")
+    df = pd.read_csv(colour_file, sep=r"\s+", names=("wavelength", "dispersion"), comment="#")
     return df["wavelength"].values, df["dispersion"].values

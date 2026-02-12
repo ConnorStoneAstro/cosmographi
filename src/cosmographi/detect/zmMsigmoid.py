@@ -5,7 +5,6 @@ from caskade import forward, Param
 
 
 class mSigmoidDetect(BaseDetect):
-
     def __init__(self, threshold: float, scale: float = 1.0, **kwargs):
         super().__init__(**kwargs)
         self.threshold = Param(
@@ -27,7 +26,6 @@ class mSigmoidDetect(BaseDetect):
 
 
 class mzSigmoidDetect(BaseDetect):
-
     def __init__(self, t_b: float, t_m: float, s_b: float = 1.0, s_m: float = 0.0, **kwargs):
         super().__init__(**kwargs)
         self.t_b = Param(

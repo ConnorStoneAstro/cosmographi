@@ -20,7 +20,7 @@ def test_quad_integrate():
     assert jnp.isclose(log_result, log_expected, rtol=1e-8)
 
 
-def test_gauss_rescale_integrate():
+def test_gauss_rescale_integrate(mark_time):
     f = lambda x: 1 - (x - 1) ** 2
     a = 0.0
     b = 2.0
@@ -29,7 +29,7 @@ def test_gauss_rescale_integrate():
     assert jnp.isclose(result, expected, rtol=1e-8)
 
     log_f = lambda x: jnp.log(1 - (x - 1) ** 2)
-    log_result = cg.utils.log_gauss_rescale_integrate(log_f, a, b, mu=1.0, sigma=0.5, n=50)
+    log_result = cg.utils.log_gauss_rescale_integrate(log_f, a, b, mu=1.0, sigma=0.5, n=500)
     log_expected = jnp.log(4.0 / 3.0)
     assert jnp.isclose(log_result, log_expected, rtol=1e-8)
 

@@ -14,13 +14,8 @@ class StaticBlackbody(StaticSource):
     corresponds to the number of blackbodies at the temperature/radius values.
     """
 
-    def __init__(self, cosmology, filters, z=None, w=None, T=None, R=None, N=1, **kwargs):
-        super().__init__(
-            cosmology,
-            filters,
-            z=z,
-            **kwargs,
-        )
+    def __init__(self, cosmology=None, z=None, T=None, R=None, N=1, **kwargs):
+        super().__init__(cosmology=cosmology, z=z, **kwargs)
         self.T = Param("T", T, shape=(), description="Blackbody temperature", units="K")
         self.R = Param("R", R, shape=(), description="Blackbody radius", units="cm")
         self.N = Param(
@@ -41,8 +36,8 @@ class TransientBlackbody(TransientSource):
     Blackbody transient source module.
     """
 
-    def __init__(self, cosmology, filters, z=None, T=None, R=None, N=1, sigma=None, **kwargs):
-        super().__init__(cosmology, filters, z=z, **kwargs)
+    def __init__(self, cosmology=None, z=None, T=None, R=None, N=1, sigma=None, **kwargs):
+        super().__init__(cosmology=cosmology, z=z, **kwargs)
         self.T = Param("T", T, shape=(), description="Blackbody temperature", units="K")
         self.R = Param("R", R, shape=(), description="Blackbody radius", units="cm")
         self.N = Param(

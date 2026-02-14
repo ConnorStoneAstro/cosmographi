@@ -1,6 +1,8 @@
+from typing import Optional
 from caskade import Module, forward, Param
 
 from ..cosmology import Cosmology
+from ..cosmology.func import mu_to_luminosity_distance
 from ..utils import flux
 from ..utils.constants import c_nm
 
@@ -14,10 +16,14 @@ class BaseSource(Module):
     relevant to all source types.
     """
 
-    def __init__(self, cosmology: Cosmology, z=None, name=None):
+    def __init__(self, cosmology: Optional[Cosmology] = None, z=None, mu=None, name=None):
         super().__init__(name)
         self.cosmology = cosmology
         self.z = Param("z", z, description="Redshift", units="dimensionless")
+        self.mu = Param("mu", mu, description="Distance modulus", units="magnitudes")
+        if cosmology is not None and mu is None:
+            self.mu = lambda p: p.cosmology.distance_modulus(p.z.value)
+            self.mu.link(["cosmology", "z"], [self.cosmology, self.z])
 
     def luminosity_density(self, w):
         raise NotImplementedError("Please use a subclass of BaseSource")
@@ -42,9 +48,9 @@ class StaticSource(BaseSource):
         raise NotImplementedError("Subclasses must implement the luminosity_density method.")
 
     @forward
-    def spectral_flux_density(self, w, z):
+    def spectral_flux_density(self, w, z, mu):
         ld = self.luminosity_density(w)
-        DL = self.cosmology.luminosity_distance(z)
+        DL = mu_to_luminosity_distance(mu) / 1e6  # Convert pc to Mpc
         return flux.f_lambda(z, DL, w, ld)
 
     @forward
@@ -97,7 +103,7 @@ class TransientSource(BaseSource):
         raise NotImplementedError("Subclasses must implement the luminosity_density method.")
 
     @forward
-    def spectral_flux_density(self, w, t, z):
+    def spectral_flux_density(self, w, t, z, mu):
         """
         Calculate the observed spectral flux density at a given redshift z.
         This method should account for z effects on the spectral flux density.
@@ -125,7 +131,7 @@ class TransientSource(BaseSource):
         w = flux.observer_to_rest_wavelength(w, z)
         p = flux.observer_to_rest_time(t, z)
         ld = self.luminosity_density(w, p)
-        DL = self.cosmology.luminosity_distance(z)
+        DL = mu_to_luminosity_distance(mu) / 1e6  # Convert pc to Mpc
         return flux.f_lambda(z, DL, ld)
 
     @forward

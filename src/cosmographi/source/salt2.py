@@ -13,6 +13,7 @@ from ..utils.constants import Mpc_to_cm
 class SALT2_2021(TransientSource):
     def __init__(
         self,
+        cosmology=None,
         x0=None,
         x1=None,
         c=None,
@@ -23,7 +24,7 @@ class SALT2_2021(TransientSource):
         name=None,
         **kwargs,
     ):
-        super().__init__(name=name, **kwargs)
+        super().__init__(cosmology=cosmology, name=name, **kwargs)
         self.x0 = Param("x0", x0, shape=(), description="Light curve amplitude")
         self.x1 = Param("x1", x1, shape=(), description="Light curve stretch")
         self.c = Param("c", c, shape=(), description="colour")

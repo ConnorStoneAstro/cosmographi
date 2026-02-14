@@ -10,23 +10,13 @@ class BaseInstrument:
         self.fov = fov
 
     def band_flux(self, source: BaseSource, *args, **kwargs):
-        fluxes = jax.vmap(
-            lambda w, T: flux.f_lambda_band(w, source.spectral_flux_density(w, *args, **kwargs), T)
-        )(self.filters.w, self.filters.T)
+        f = source.spectral_flux_density(self.filters.w, *args, **kwargs)
+        fluxes = jax.vmap(lambda T: flux.f_lambda_band(self.filters.w, f, T))(self.filters.T)
         return fluxes
 
-    def band_photons(self, source: BaseSource, *args, **kwargs):
-        photons = jax.vmap(
-            lambda w, T: flux.f_lambda_band_photons(
-                w, source.spectral_flux_density(w, *args, **kwargs), T
-            )
-        )(self.filters.w, self.filters.T)
-        return photons
-
     def mag_AB(self, source: BaseSource, *args, **kwargs):
+        f = source.spectral_flux_density(self.filters.w, *args, **kwargs)
         mag = jax.vmap(
-            lambda nu, w, T: flux.mag_AB(
-                nu, flux.f_nu(w, source.spectral_flux_density(w, *args, **kwargs))[::-1], T
-            )
-        )(self.filters.nu, self.filters.w, self.filters.T_nu)
+            lambda T: flux.mag_AB(self.filters.nu, flux.f_nu(self.filters.w, f)[::-1], T)
+        )(self.filters.T_nu)
         return mag

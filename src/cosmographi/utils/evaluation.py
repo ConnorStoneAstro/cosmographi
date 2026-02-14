@@ -150,7 +150,7 @@ def hdp_null_test(g: jnp.ndarray, s: jnp.ndarray):
 
     """
     nsamp, nsim = s.shape
-    q = jnp.sum(s >= g, axis=0)
+    q = jnp.sum(s >= g[None], axis=0)
     p = jnp.minimum(jnp.ones_like(q), (1.0 + q) / (nsamp + 1.0))
     chi2 = -2 * jnp.sum(jnp.log(p))  # assuming p ~ U(0,1), then -2 log p ~ chi2_2
     p_value = two_tailed_p(chi2, df=2 * nsim)

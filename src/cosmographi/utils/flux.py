@@ -37,24 +37,26 @@ def observer_to_rest_wavelength(w_obs, z):
 
 
 def rest_to_observer_time(t_rest, z):
+    """Convert rest frame time to observer frame time, transformed by redshift z"""
     return t_rest * (1 + z)
 
 
 def observer_to_rest_time(t_obs, z):
+    """Convert observer frame time to rest frame time, transformed by redshift z"""
     return t_obs / (1 + z)
 
 
 def f_lambda(z, DL, LD):
     """
-    Calculate the observed spectral  flux density at a given redshift z.
-    This method should account for z effects on the flux density.
+    Calculate the observed spectral flux density at a given redshift z.
+    This method should account for z effects on the spectral flux density.
 
     Here we use:
 
     $$f_{\\lambda}^{obs}(\\lambda_{obs}) = \\frac{1}{(1 + z) D_L^2}L_{\\lambda}^{rest}(\\lambda_{obs} / (1 + z))$$
 
     where $D_L$ is the luminosity distance in cm. $\\lambda_{obs}$ is the
-    observed wavelength. $f_{\\lambda}^{obs}$ is the observed flux density (erg/s/cm^2/nm), and
+    observed wavelength. $f_{\\lambda}^{obs}$ is the observed spectral flux density (erg/s/cm^2/nm), and
     $L_{\\lambda}^{rest}$ is the rest-frame luminosity density (erg/s/nm).
 
     Parameters
@@ -77,9 +79,27 @@ def f_lambda(z, DL, LD):
     return LD / (4 * jnp.pi * (1 + z) * DL**2)  # in erg/s/cm^2/nm
 
 
+def nu(w):
+    """
+    Convert from wavelength (nm) to frequency (Hz).
+
+    Parameters
+    ----------
+    w : jnp.ndarray
+        Wavelength array (nm)
+
+    Returns
+    -------
+    Frequency : jnp.ndarray
+        Frequency, nu, array (Hz) same frame as wavelength
+
+    """
+    return c_nm / w
+
+
 def f_nu(w_l, f_l):
     """
-    Calculate the observed flux density in frequency units converted from wavelength units.
+    Calculate the observed spectral flux density in frequency units converted from wavelength units.
 
     $$f_{\\nu}^{obs}(\\nu_{obs}) = \\frac{c}{\\nu^2}f_{\\lambda}^{obs}$$
 
@@ -92,7 +112,7 @@ def f_nu(w_l, f_l):
     $$f_{\\nu}^{obs}(\\nu_{obs}) = \\frac{1}{(1 + z) D_L^2}L_{\\nu}^{rest}(\\nu_{obs} / (1 + z))$$
 
     where $D_L$ is the luminosity distance in cm. $\\nu_{obs}$ is the
-    observed frequency. $f_{\\nu}^{obs}$ is the observed flux density (erg/s/cm^2/Hz), and
+    observed frequency. $f_{\\nu}^{obs}$ is the observed spectral flux density (erg/s/cm^2/Hz), and
     $L_{\\nu}^{rest}$ is the rest-frame luminosity density (erg/s/Hz).
 
     Parameters
@@ -100,20 +120,42 @@ def f_nu(w_l, f_l):
     w_l : jnp.ndarray
         Wavelength array (nm) observer frame
     f_l : jnp.array
-        Flux density from f_lambda function (erg/s/cm^2/nm)
+        Spectral flux density from f_lambda function (erg/s/cm^2/nm)
 
     Returns
     -------
-    Frequency : jnp.ndarray
-        Frequency, nu, array (Hz) observer frame
     spectral_flux_density : jnp.array
         Spectral flux density, f_nu, in frequency space (erg/s/cm^2/Hz)
     """
-    nu = c_nm / w_l  # Hz
-    return nu, f_l * c_nm / nu**2
+    return f_l * w_l**2 / c_nm
 
 
-def f_lambda_band(w_l, f_l, w_b, T_b):
+def f_l(nu, f_nu):
+    """
+    Calculate the observed spectral flux density in wavelength units converted from frequency units.
+
+    $$f_{\\lambda}^{obs}(\\lambda_{obs}) = \\frac{\\nu_{obs}^2}{c}f_{\\nu}^{obs}(\\nu_{obs})$$
+
+    and
+
+    $$\\nu = \\frac{c}{\\lambda}$$
+
+    Parameters
+    ----------
+    nu : jnp.ndarray
+        Frequency array (nm) observer frame
+    f_nu : jnp.array
+        Spectral flux density from f_nu function (erg/s/cm^2/Hz) observer frame
+
+    Returns
+    -------
+    spectral_flux_density : jnp.array
+        Spectral flux density, f_l, in wavelength space (erg/s/cm^2/nm)
+    """
+    return f_nu * nu**2 / c_nm
+
+
+def f_lambda_band(w, f_l, T_b):
     """
     Calculate the flux integrated over a given wavelength band.
 
@@ -121,19 +163,17 @@ def f_lambda_band(w_l, f_l, w_b, T_b):
 
     Parameters
     ----------
-    w_l : jnp.ndarray
+    w : jnp.ndarray
         Wavelength array (nm) observer frame
     f_l : jnp.array
-        Flux density from f_lambda function (erg/s/cm^2/nm)
-    w_b : jnp.ndarray
-        Wavelength array for the bandpass (in nm) observer frame.
+        Spectral flux density from f_lambda function (erg/s/cm^2/nm) evaluated at w.
     T_b : jnp.ndarray
-        Transmission array for the bandpass corresponding to w_b (unitless).
+        Transmission array for the bandpass (unitless) evaluated at w.
     """
-    return jnp.trapezoid(f_l * jnp.interp(w_l, w_b, T_b), w_l)  # in erg/s/cm^2
+    return jnp.trapezoid(f_l * T_b, w)  # in erg/s/cm^2
 
 
-def f_nu_band(nu, f_nu, w_b, T_b):
+def f_nu_band(nu, f_nu, T_nu):
     """
     Calculate the observed flux integrated over a given frequency band.
 
@@ -150,12 +190,10 @@ def f_nu_band(nu, f_nu, w_b, T_b):
     T_b : jnp.ndarray
         Transmission array for the bandpass corresponding to w_b (unitless).
     """
-    nu_b = c_nm / w_b[::-1]
-    T_b = T_b[::-1]
-    return jnp.trapezoid(f_nu * jnp.interp(nu, nu_b, T_b), nu)  # in erg/s/cm^2
+    return jnp.trapezoid(f_nu * T_nu, nu)  # in erg/s/cm^2
 
 
-def f_lambda_band_energy(w_l, f_l, w_b, T_b):
+def f_lambda_band_energy(w, f_l, T_b):
     """
     Calculate the observed flux energy density averaged over a given wavelength band.
 
@@ -163,19 +201,17 @@ def f_lambda_band_energy(w_l, f_l, w_b, T_b):
 
     Parameters
     ----------
-    w_l : jnp.ndarray
+    w : jnp.ndarray
         Wavelength array (nm) observer frame
     f_l : jnp.array
-        Flux density from f_lambda function (erg/s/cm^2/nm)
-    w_b : jnp.ndarray
-        Wavelength array for the bandpass (in nm) observer frame.
+        Spectral flux density from f_lambda function (erg/s/cm^2/nm) evaluated at w.
     T_b : jnp.ndarray
-        Transmission array for the bandpass corresponding to w_b (unitless).
+        Transmission array for the bandpass (unitless) evaluated at w.
     """
-    return f_lambda_band(w_l, f_l, w_b, T_b) / jnp.trapezoid(T_b, w_b)  # in erg/s/cm^2/nm
+    return f_lambda_band(w, f_l, T_b) / jnp.trapezoid(T_b, w)  # in erg/s/cm^2/nm
 
 
-def f_nu_band_energy(nu, f_nu, w_b, T_b):
+def f_nu_band_energy(nu, f_nu, T_nu):
     """
     Calculate the observed flux energy density averaged over a given frequency band.
 
@@ -192,12 +228,10 @@ def f_nu_band_energy(nu, f_nu, w_b, T_b):
     T_b : jnp.ndarray
         Transmission array for the bandpass corresponding to w_b (unitless).
     """
-    nu_b = c_nm / w_b[::-1]
-    T_b = T_b[::-1]
-    return f_nu_band(nu, f_nu, w_b, T_b) / jnp.trapezoid(T_b, nu_b)  # in erg/s/cm^2/Hz
+    return f_nu_band(nu, f_nu, T_nu) / jnp.trapezoid(T_nu, nu)  # in erg/s/cm^2/Hz
 
 
-def f_lambda_band_photons(w_l, f_l, w_b, T_b):
+def f_lambda_band_photons(w, f_l, T_b):
     """
     Calculate the observed flux photon density averaged over a given wavelength band.
 
@@ -205,22 +239,19 @@ def f_lambda_band_photons(w_l, f_l, w_b, T_b):
 
     Parameters
     ----------
-    w_l : jnp.ndarray
+    w : jnp.ndarray
         Wavelength array (nm) observer frame
     f_l : jnp.array
-        Flux density from f_lambda function (erg/s/cm^2/nm)
-    w_b : jnp.ndarray
-        Wavelength array for the bandpass (in nm) observer frame.
+        Spectral flux density from f_lambda function (erg/s/cm^2/nm) evaluated at w
     T_b : jnp.ndarray
-        Transmission array for the bandpass corresponding to w_b (unitless).
+        Transmission array for the bandpass (unitless) evalauted at w.
     """
-    T_b = jnp.interp(w_l, w_b, T_b)
-    return jnp.trapezoid(f_l * w_l * T_b, w_l) / jnp.trapezoid(
-        T_b * w_l, w_l
+    return jnp.trapezoid(f_l * w * T_b, w) / jnp.trapezoid(
+        T_b * w, w
     )  # in erg/s/cm^2/nm photon counting
 
 
-def f_nu_band_photons(nu, f_nu, w_b, T_b):
+def f_nu_band_photons(nu, f_nu, T_nu):
     """
     Calculate the observed flux photon density averaged over a given frequency band.
 
@@ -231,21 +262,16 @@ def f_nu_band_photons(nu, f_nu, w_b, T_b):
     nu : jnp.ndarray
         Frequency space array (Hz) observer frame
     f_nu : jnp.ndarray
-        Spectral flux density from f_nu function (erg/s/cm^2/Hz)
-    w_b : jnp.ndarray
-        Wavelength array for the bandpass (in nm) observer frame.
+        Spectral flux density from f_nu function (erg/s/cm^2/Hz) evaluated at nu.
     T_b : jnp.ndarray
-        Transmission array for the bandpass corresponding to w_b (unitless).
+        Transmission array for the bandpass (unitless) evaluated at nu.
     """
-    nu_b = c_nm / w_b[::-1]  # Hz
-    T_b = T_b[::-1]
-    T_b = jnp.interp(nu, nu_b, T_b)
-    return jnp.trapezoid(f_nu * T_b / nu, nu) / jnp.trapezoid(
-        T_b / nu, nu
+    return jnp.trapezoid(f_nu * T_nu / nu, nu) / jnp.trapezoid(
+        T_nu / nu, nu
     )  # in erg/s/cm^2/Hz photon counting
 
 
-def mag_AB(nu, f_nu, w_b, T_b):
+def mag_AB(nu, f_nu, T_nu):
     """
     Calculate the AB magnitude in a given band at redshift z.
 
@@ -256,11 +282,9 @@ def mag_AB(nu, f_nu, w_b, T_b):
     nu : jnp.ndarray
         Frequency space array (Hz) observer frame
     f_nu : jnp.ndarray
-        Spectral flux density from f_nu function (erg/s/cm^2/Hz)
-    w_b : jnp.ndarray
-        Wavelength array for the bandpass (in nm) observer frame.
+        Spectral flux density from f_nu function (erg/s/cm^2/Hz) evaluated at nu.
     T_b : jnp.ndarray
-        Transmission array for the bandpass corresponding to w_b (unitless).
+        Transmission array for the bandpass (unitless) evaluated at nu.
     """
-    f_nu = f_nu_band_photons(nu, f_nu, w_b, T_b)
-    return -2.5 * jnp.log10(f_nu) - 48.6  # 48.6 is the zero-point for AB magnitudes in Jy
+    F_nu = f_nu_band_photons(nu, f_nu, T_nu)
+    return -2.5 * jnp.log10(F_nu) - 48.6  # 48.6 is the zero-point for AB magnitudes in Jy

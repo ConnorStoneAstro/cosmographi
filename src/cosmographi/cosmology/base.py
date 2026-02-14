@@ -4,6 +4,7 @@ from caskade import Module, Param, forward
 
 from ..utils.constants import c_km
 from ..utils import quad
+from . import func
 
 
 class Cosmology(Module):
@@ -135,7 +136,8 @@ class Cosmology(Module):
         Compute the distance modulus, which is: 5 * log10(luminosity_distance(z)) - 5
         Units: mag.
         """
-        return 5 * jnp.log10(self.luminosity_distance(z)) - 5
+        LD = self.luminosity_distance(z)
+        return func.luminosity_distance_to_mu(LD * 1e6)  # Convert Mpc to pc
 
     @forward
     def angular_diameter_distance(self, z):

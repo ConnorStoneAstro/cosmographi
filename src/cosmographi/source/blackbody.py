@@ -2,6 +2,7 @@ import jax.numpy as jnp
 from caskade import Param, forward
 from .base import StaticSource, TransientSource
 from . import func
+from ..utils import flux
 
 
 class StaticBlackbody(StaticSource):
@@ -13,13 +14,8 @@ class StaticBlackbody(StaticSource):
     corresponds to the number of blackbodies at the temperature/radius values.
     """
 
-    def __init__(self, cosmology, filters, z=None, w=None, T=None, R=None, N=1, **kwargs):
-        super().__init__(
-            cosmology,
-            filters,
-            z=z,
-            **kwargs,
-        )
+    def __init__(self, cosmology=None, z=None, T=None, R=None, N=1, **kwargs):
+        super().__init__(cosmology=cosmology, z=z, **kwargs)
         self.T = Param("T", T, shape=(), description="Blackbody temperature", units="K")
         self.R = Param("R", R, shape=(), description="Blackbody radius", units="cm")
         self.N = Param(
@@ -40,8 +36,8 @@ class TransientBlackbody(TransientSource):
     Blackbody transient source module.
     """
 
-    def __init__(self, cosmology, filters, z=None, T=None, R=None, N=1, sigma=None, **kwargs):
-        super().__init__(cosmology, filters, z=z, **kwargs)
+    def __init__(self, cosmology=None, z=None, T=None, R=None, N=1, sigma=None, **kwargs):
+        super().__init__(cosmology=cosmology, z=z, **kwargs)
         self.T = Param("T", T, shape=(), description="Blackbody temperature", units="K")
         self.R = Param("R", R, shape=(), description="Blackbody radius", units="cm")
         self.N = Param(
@@ -57,6 +53,7 @@ class TransientBlackbody(TransientSource):
         )
 
     @forward
-    def luminosity_density(self, w, t, T, R, N, t0, sigma):
-        scale = jnp.exp(-0.5 * ((t - t0) / sigma) ** 2)
+    def luminosity_density(self, w, p, T, R, N, t0, sigma, z):
+        p0 = flux.observer_to_rest_time(t0, z)
+        scale = jnp.exp(-0.5 * ((p - p0) / sigma) ** 2)
         return func.blackbody_luminosity_density(w, T, R, N) * scale

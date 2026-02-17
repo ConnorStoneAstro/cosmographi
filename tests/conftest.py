@@ -28,24 +28,13 @@ def pytest_sessionfinish():
         timestamp = datetime.datetime.strftime(
             datetime.datetime.now(datetime.timezone.utc), "%Y-%m-%d %H:%M:%S"
         )
-        with Path("test_timings2.json").open("w") as f:
+        with Path("test_timings.json").open("w") as f:
             json.dump(
                 {
-                    "timestamp": timestamp,
-                    "results": {
-                        "test": list(_TIMING_RESULTS.keys()),
-                        "time": list(_TIMING_RESULTS.values()),
-                    },
+                    "test": list(_TIMING_RESULTS.keys()),
+                    timestamp: list(_TIMING_RESULTS.values()),
                 },
                 f,
             )
 
     yield
-
-
-# check_times(max_runs=50)
-# each column header is a datetime string
-# for the ones that are 20% more, add an alert
-# that means storing them as artifacts (comma-separated string)
-# then, if the artifact exists, you can use this action to add a comment to the PR: peter-evans/create-pull-request@v6
-# This should certainly reference the commit hash as well

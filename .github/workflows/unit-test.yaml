@@ -1,18 +1,20 @@
 name: Unit Test
 on:
-  push:
-    branches:
-      - main
   pull_request:
     branches:
       - main
       - develop
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
   unit-tests:
     environment: CI
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
     strategy:
       matrix:
         python-version:
@@ -33,7 +35,40 @@ jobs:
           # install into system and not venv
           UV_SYSTEM_PYTHON: 1
       - name: Run tests
-        run: pytest --cov tests/
+        run: |
+          pytest --cov=src tests/
+          mv test_timings.json test_timings_latest.json
+      - name: Test cache restore
+        id: cache-restore
+        uses: actions/cache/restore@v5
+        with:
+          path: ${{ github.workspace }}/test_timings.json
+          key: ${{ runner.os }}-test-timings
+      - name: Run test times comparison
+        if: steps.cache-restore.outputs.cache-hit == 'true'
+        run: |
+          python3 ${{ github.workspace }}/src/cosmographi/scripts/compare_times.py \
+            ${{ github.workspace }}/test_timings.json \
+            ${{ github.workspace }}/test_timings_latest.json \
+            ${{ github.workspace }}/test_timings.json \
+            ${{ github.workspace }}/outliers.json
+          if [[ -f outliers.json ]]; then
+            echo "Slow tests found!!" > slow-tests.json
+            jq --color-output . outliers.json >> slow-tests.json
+          fi
+      - name: Report slow tests
+        uses: mshick/add-pr-comment@v2
+        if:  ${{ hashFiles('slow-tests.json') != '' }}
+        with:
+          message-path: slow-tests.json
+      - name: Prepare initial times for cache if empty
+        if: steps.cache-restore.outputs.cache-hit != 'true'
+        run: mv test_timings_latest.json test_timings.json
+      - name: Update cache
+        uses: actions/cache/save@v5
+        with:
+          path: ${{ github.workspace }}/test_timings.json
+          key: ${{ runner.os }}-test-timings
       - name: Code cov
         uses: codecov/codecov-action@v5
         with:

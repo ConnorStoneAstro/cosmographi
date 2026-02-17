@@ -51,11 +51,6 @@ def int_Phi_N(mu1, sigma1, mu2, sigma2):
 
 
 @jax.jit
-def cdist_pbc(x, y):
-    return jnp.sqrt(jnp.sum(((x[:, None] - y[None, :] + 1) % 2 - 1) ** 2, -1))
-
-
-@jax.jit
 def cdist(x, y):
     return jnp.sqrt(jnp.sum((x[:, None] - y[None, :]) ** 2, -1))
 

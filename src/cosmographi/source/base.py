@@ -18,12 +18,11 @@ class BaseSource(Module):
 
     def __init__(self, cosmology: Optional[Cosmology] = None, z=None, mu=None, name=None):
         super().__init__(name)
-        self.cosmology = cosmology
         self.z = Param("z", z, description="Redshift", units="dimensionless")
         self.mu = Param("mu", mu, description="Distance modulus", units="magnitudes")
         if cosmology is not None and mu is None:
             self.mu = lambda p: p.cosmology.distance_modulus(p.z.value)
-            self.mu.link(["cosmology", "z"], [self.cosmology, self.z])
+            self.mu.link(["cosmology", "z"], [cosmology, self.z])
 
     def luminosity_density(self, w):
         raise NotImplementedError("Please use a subclass of BaseSource")

@@ -29,7 +29,7 @@ class MagAB(MagSystem):
         """
         # AB magnitude system normalization flux in erg/s/cm^2/Hz
         f = 3631 * 1e-23  # Convert Jy to erg/s/cm^2/Hz
-        return jax.vmap(flux.f_nu_band, in_axes=(None, None, 0))(throughput.nu, f, throughput.T_nu)
+        return jax.vmap(flux.f_nu_band, in_axes=(0, None, 0))(throughput.nu, f, throughput.T_nu)
 
     def __call__(self, fluxes):
         """
@@ -48,3 +48,22 @@ class MagAB(MagSystem):
         """
         # Convert fluxes to magnitudes using the AB magnitude formula
         return -2.5 * jnp.log10(fluxes)
+
+    def err(self, fluxes, flux_errs):
+        """
+        Convert flux errors to magnitude errors using error propagation for the AB magnitude formula.
+
+        Parameters
+        ----------
+        fluxes : jnp.ndarray
+            Fluxes in the magnitude system (flux / flux_norm) for each filter.
+        flux_errs : jnp.ndarray
+            Errors on the fluxes in the magnitude system for each filter.
+
+        Returns
+        -------
+        mag_errs : jnp.ndarray
+            Magnitude errors corresponding to the input flux errors.
+        """
+        # Error propagation for m_AB = -2.5 * log10(fluxes)
+        return 2.5 / jnp.log(10) * (flux_errs / fluxes)

@@ -1,5 +1,17 @@
 __version__ = "0.0.0"
-from . import sn, detect, rates, source, survey, likelihood, sims, utils, throughput, instrument
+from . import (
+    sn,
+    detect,
+    rates,
+    source,
+    survey,
+    likelihood,
+    sims,
+    utils,
+    throughput,
+    instrument,
+    magsystem,
+)
 from .cosmology import Cosmology
 
 import jax
@@ -20,5 +32,6 @@ __all__ = (
     "utils",
     "throughput",
     "instrument",
+    "magsystem",
     "Cosmology",
 )

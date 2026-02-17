@@ -18,8 +18,8 @@ class BaseSource(Module):
 
     def __init__(self, cosmology: Optional[Cosmology] = None, z=None, mu=None, name=None):
         super().__init__(name)
-        self.z = Param("z", z, description="Redshift", units="dimensionless")
-        self.mu = Param("mu", mu, description="Distance modulus", units="magnitudes")
+        self.z = Param("z", z, shape=(), description="Redshift", units="dimensionless")
+        self.mu = Param("mu", mu, shape=(), description="Distance modulus", units="magnitudes")
         if cosmology is not None and mu is None:
             self.mu = lambda p: p.cosmology.distance_modulus(p.z.value)
             self.mu.link(["cosmology", "z"], [cosmology, self.z])
@@ -73,6 +73,7 @@ class TransientSource(BaseSource):
         self.t0 = Param(
             "t0",
             t0,
+            shape=(),
             description="Light curve reference time (observer frame)",
             units="days",
         )

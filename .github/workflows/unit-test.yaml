@@ -44,9 +44,10 @@ jobs:
         uses: actions/cache/restore@v5
         with:
           restore-keys: |
+            test-timings-${{ github.run_id }}-
             test-timings-
           path: test_timings.json
-          key: "test-timings-${{ github.run_id }}"
+          key: "test-timings-${{ github.run_id }}-${{ github.run_attempt }}"
       - name: Run test times comparison
         if: ${{ hashFiles('test_timings.json') != '' }}
         run: |
@@ -71,7 +72,7 @@ jobs:
         uses: actions/cache/save@v5
         with:
           path: test_timings.json
-          key: "test-timings-${{ github.run_id }}-${{ github.run_id }}"
+          key: "test-timings-${{ github.run_id }}-${{ github.run_attempt }}"
       - name: Code cov
         uses: codecov/codecov-action@v5
         with:

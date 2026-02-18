@@ -62,7 +62,7 @@ def compare_test_times(
         outliers.to_json(results_save_path, orient="records")
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     import argparse
 
     parser = argparse.ArgumentParser(description="Compare cached test times against the latest.")

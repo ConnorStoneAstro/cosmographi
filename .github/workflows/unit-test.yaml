@@ -39,7 +39,7 @@ jobs:
         run: |
           pytest --cov=src tests/
           mv test_timings.json test_timings_latest.json
-      - name: Test cache restore
+      - name: Restore test time cache
         id: cache-restore
         uses: actions/cache/restore@v5
         with:

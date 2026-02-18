@@ -1,27 +1,54 @@
+import jax.numpy as jnp
+from ..utils.helpers import trim_and_pad_batch
 from ..utils import flux
 
 
 class Throughput:
     """Stores throughput curves
 
-    These combine bandpass filters, atmosphere throughput, mirror/lens and other hardware throughput.
+    These combine bandpass filters, atmosphere throughput, mirror/lens and other
+    hardware throughput.
 
-    This object holds the wavelength and transmission curves for batched
-    filters including all effects between the atmosphere and the CCD. The primary attributes are w and T. w is the wavelength (nm)
-    array corresponding to the wavelengths at which the transmissions are
-    evaluated. T is the transmission array, the first dimension indexes the
-    filters, the second gives the transmission corresponding to the wavelength
-    array.
+    This object holds the wavelength and transmission curves for batched filters
+    including all effects between the atmosphere and the CCD. The primary
+    attributes are w and T. w is the wavelength (nm) array corresponding to the
+    wavelengths at which the transmissions are evaluated. T is the transmission
+    array, the first dimension indexes the filters, the second gives the
+    transmission corresponding to the wavelength array.
+
+    Parameters
+    ----------
+    names : list of str
+        Names of the filters in the throughput.
+    w : array-like
+        Wavelength array (nm) for the throughput curves. Can be 1D or 2D. If 1D, it is assumed to be the same for all filters.
+    T : array-like
+        Transmission array for the throughput curves. Should be 2D with shape (n_filters, n_wavelengths).
     """
 
-    def __init__(self, name, w, T):
-        self.name = name
-        if w.ndim == 1:
-            w = w[None]
+    def __init__(self, names: list[str], w: jnp.ndarray, T: jnp.ndarray):
+        self.names = names
+        self.set_throughput(w, T)
+
+    def set_throughput(self, w: jnp.ndarray, T: jnp.ndarray):
+        """Set the wavelength and transmission curves for the filters."""
         if T.ndim == 1:
             T = T[None]
+        if w.ndim == 1:
+            w = w.reshape(1, -1).repeat(T.shape[0], axis=0)
         self.w = w
         self.T = T
 
         self.nu = flux.nu(self.w[:, ::-1])
         self.T_nu = self.T[:, ::-1]
+
+    def trim(self, threshold: float = 1e-4):
+        """Trim the wavelength range for each filter to where the transmission is above a threshold."""
+
+        self.set_throughput(*trim_and_pad_batch(self.w, self.T, threshold))
+
+    def __getitem__(self, key):
+        """Get the wavelength and transmission for a given filter by name."""
+        if isinstance(key, str):
+            key = self.names.index(key)
+        return self.w[key], self.T[key]

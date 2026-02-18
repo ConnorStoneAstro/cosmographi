@@ -1,3 +1,4 @@
+from abc import abstractmethod
 from ..throughput.base import Throughput
 
 
@@ -5,6 +6,7 @@ class MagSystem:
     def __init__(self):
         self.name = None  # Should be set by subclasses
 
+    @abstractmethod
     def flux_norm(self, throughput: Throughput):
         """
         Return the normalization flux for the magnitude system and given throughput.
@@ -12,6 +14,7 @@ class MagSystem:
         """
         raise NotImplementedError("Subclasses must implement this method.")
 
+    @abstractmethod
     def __call__(self, fluxes):
         """
         Convert fluxes to magnitudes using the normalization flux.
@@ -28,6 +31,7 @@ class MagSystem:
         """
         raise NotImplementedError("Subclasses must implement this method.")
 
+    @abstractmethod
     def err(self, fluxes, flux_errs):
         """
         Convert flux errors to magnitude errors using error propagation.

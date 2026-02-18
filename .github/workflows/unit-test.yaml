@@ -36,7 +36,7 @@ jobs:
           UV_SYSTEM_PYTHON: 1
       - name: Run tests
         run: |
-          pytest --cov=src tests/
+          pytest --cov=src --debug=trace tests/
           mv test_timings.json test_timings_latest.json
       - name: Test cache restore
         id: cache-restore

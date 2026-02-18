@@ -1,5 +1,5 @@
 from caskade import Module
-from ..filters import Filters
+from ..throughput import Filters
 
 
 class BaseSurvey(Module):

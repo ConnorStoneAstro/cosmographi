@@ -1,5 +1,6 @@
 import jax.numpy as jnp
 import jax
+import numpy as np
 from tqdm import tqdm
 from itertools import combinations_with_replacement
 
@@ -48,11 +49,6 @@ def int_Phi_N(mu1, sigma1, mu2, sigma2):
     # int_{-inf}^{inf} Phi((x - mu1) / sigma1) N(x|mu2, sigma2^2) dx
     # where Phi is the CDF of the standard normal distribution
     return jax.scipy.stats.norm.logcdf(-(mu1 - mu2) / jnp.sqrt(sigma1**2 + sigma2**2))
-
-
-@jax.jit
-def cdist_pbc(x, y):
-    return jnp.sqrt(jnp.sum(((x[:, None] - y[None, :] + 1) % 2 - 1) ** 2, -1))
 
 
 @jax.jit
@@ -124,3 +120,59 @@ def tdp_evaluate(X, coefs, poly):
     """
     X_poly = _polynomial_transform(X, poly)
     return jnp.dot(X_poly, coefs)
+
+
+def trim_and_pad_batch(wavelengths, transmissions, threshold=0.01):
+    """
+    Trims each filter independently, then pads them all to the same
+    length (the length of the widest filter).
+    """
+    # Numpy is faster than jax for this sort of slicing and dicing
+    wavelengths, transmissions = np.array(wavelengths), np.array(transmissions)
+    n_filters, _ = transmissions.shape
+
+    # 1. Find the start and end indices for every filter
+    # mask shape: (n_filters, n_points)
+    mask = transmissions > threshold
+
+    starts = []
+    ends = []
+    widths = []
+
+    for i in range(n_filters):
+        idx = np.where(mask[i])[0]
+        if idx.size > 0:
+            s, e = int(idx[0]), int(idx[-1])
+            starts.append(s)
+            ends.append(e)
+            widths.append(e - s + 1)
+        else:
+            starts.append(0)
+            ends.append(0)
+            widths.append(0)
+
+    # 2. Determine the target width (the largest significant region)
+    max_w = max(widths)
+    # Round for better memory alignment
+    max_w = ((max_w + 63) // 64) * 64
+
+    # 3. Create the destination arrays
+    # Using NaN for wavelengths is often safer to avoid confusing them with 0.0
+    trimmed_trans = np.zeros((n_filters, max_w))
+    trimmed_wave = np.full((n_filters, max_w), np.nan)
+    dw = np.diff(wavelengths, axis=1).mean(axis=1)  # Average spacing for each filter
+
+    # 4. Populate the arrays
+    # We loop because each slice is a different size/location
+    for i in range(n_filters):
+        if widths[i] > 0:
+            s, e = starts[i], ends[i]
+            w = widths[i]
+            # We place the data at the start of the new array (left-aligned)
+            trimmed_trans[i, :w] = transmissions[i, s : e + 1]
+            trimmed_wave[i, :w] = wavelengths[i, s : e + 1]
+
+            # Dummy fill the rest of the wavelengths with a linear extrapolation based on the last point
+            trimmed_wave[i, w:] = wavelengths[i, e] + dw[i] * np.arange(1, max_w - w + 1)
+
+    return jnp.array(trimmed_wave), jnp.array(trimmed_trans)

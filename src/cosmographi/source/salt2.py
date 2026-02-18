@@ -43,6 +43,12 @@ class SALT2_2021(TransientSource):
         self.wavelength_nodes = wavelength_nodes  # wavelength nodes of M and CL
         self.phase_sampler = jax.vmap(jnp.interp, in_axes=(None, None, 1), out_axes=-1)
 
+    def min_phase(self):
+        return self.phase_nodes[0]
+
+    def max_phase(self):
+        return self.phase_nodes[-1]
+
     @forward
     def get_model_basis(self, p, M):
         return tuple(self.phase_sampler(p, self.phase_nodes, M[i]) for i in range(M.shape[0]))

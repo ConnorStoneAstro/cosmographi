@@ -1,5 +1,7 @@
 from typing import Optional
+from abc import abstractmethod
 from caskade import Module, forward, Param
+import jax.numpy as jnp
 
 from ..cosmology import Cosmology
 from ..cosmology.func import mu_to_luminosity_distance
@@ -16,19 +18,29 @@ class BaseSource(Module):
     relevant to all source types.
     """
 
-    def __init__(self, cosmology: Optional[Cosmology] = None, z=None, mu=None, name=None):
+    def __init__(
+        self,
+        cosmology: Optional[Cosmology] = None,
+        z: Optional[float] = None,
+        mu: Optional[float] = None,
+        name: Optional[str] = None,
+    ):
         super().__init__(name)
-        self.cosmology = cosmology
-        self.z = Param("z", z, description="Redshift", units="dimensionless")
-        self.mu = Param("mu", mu, description="Distance modulus", units="magnitudes")
+        self.z = Param("z", z, shape=(), description="Redshift", units="dimensionless")
+        self.mu = Param("mu", mu, shape=(), description="Distance modulus", units="magnitudes")
         if cosmology is not None and mu is None:
-            self.mu = lambda p: p.cosmology.distance_modulus(p.z.value)
-            self.mu.link(["cosmology", "z"], [self.cosmology, self.z])
+            self.link_cosmology(cosmology)
 
-    def luminosity_density(self, w):
+    def link_cosmology(self, cosmology: Cosmology):
+        self.mu = lambda p: p.cosmology.distance_modulus(p.z.value)
+        self.mu.link(["cosmology", "z"], [cosmology, self.z])
+
+    @abstractmethod
+    def luminosity_density(self, w: jnp.ndarray, *args, **kwargs):
         raise NotImplementedError("Please use a subclass of BaseSource")
 
-    def spectral_flux_density(self, w):
+    @abstractmethod
+    def spectral_flux_density(self, w: jnp.ndarray, *args, **kwargs):
         raise NotImplementedError("Please use a subclass of BaseSource")
 
 
@@ -40,21 +52,21 @@ class StaticSource(BaseSource):
     It can be extended to include properties and methods specific to static sources.
     """
 
-    @forward
-    def luminosity_density(self, w):
+    @abstractmethod
+    def luminosity_density(self, w: jnp.ndarray):
         """
         Calculate the luminosity density at a given wavelength in units of erg/s/nm.
         """
         raise NotImplementedError("Subclasses must implement the luminosity_density method.")
 
     @forward
-    def spectral_flux_density(self, w, z, mu):
+    def spectral_flux_density(self, w: jnp.ndarray, z: jnp.ndarray, mu: jnp.ndarray):
         ld = self.luminosity_density(w)
         DL = mu_to_luminosity_distance(mu) / 1e6  # Convert pc to Mpc
         return flux.f_lambda(z, DL, w, ld)
 
     @forward
-    def spectral_flux_density_frequency(self, nu):
+    def spectral_flux_density_frequency(self, nu: jnp.ndarray):
         w = c_nm / nu
         f_l = self.spectral_flux_density(w)
         return flux.f_nu(w, f_l)[1]
@@ -68,27 +80,41 @@ class TransientSource(BaseSource):
     It can be extended to include properties and methods specific to transient sources.
     """
 
-    def __init__(self, cosmology: Cosmology, z=None, t0=None, p_range=(0, 1), name=None):
+    def __init__(
+        self,
+        cosmology: Optional[Cosmology] = None,
+        z: Optional[float] = None,
+        t0: Optional[float] = None,
+        name: Optional[str] = None,
+    ):
         super().__init__(cosmology, z=z, name=name)
 
         self.t0 = Param(
             "t0",
             t0,
+            shape=(),
             description="Light curve reference time (observer frame)",
             units="days",
         )
-        self.p_range = p_range  # Time (phase) range for transient relative to t0, rest frame
+
+    @abstractmethod
+    def min_phase(self):
+        raise NotImplementedError("Subclasses must implement the min_phase method.")
+
+    @abstractmethod
+    def max_phase(self):
+        raise NotImplementedError("Subclasses must implement the max_phase method.")
 
     @forward
     def visible(self, t, t0, z):
         t_range = (
-            flux.rest_to_observer_time(self.p_range[0], z),
-            flux.rest_to_observer_time(self.p_range[1], z),
+            flux.rest_to_observer_time(self.min_phase(), z),
+            flux.rest_to_observer_time(self.max_phase(), z),
         )
         return (t >= t0 + t_range[0]) & (t <= t0 + t_range[1])
 
-    @forward
-    def luminosity_density(self, w, p):
+    @abstractmethod
+    def luminosity_density(self, w: jnp.ndarray, p: jnp.ndarray):
         """
         Calculate the luminosity density at a given wavelength in units of
         erg/s/nm and time in units of seconds.
@@ -103,7 +129,9 @@ class TransientSource(BaseSource):
         raise NotImplementedError("Subclasses must implement the luminosity_density method.")
 
     @forward
-    def spectral_flux_density(self, w, t, z, mu):
+    def spectral_flux_density(
+        self, w: jnp.ndarray, t: jnp.ndarray, z: jnp.ndarray, mu: jnp.ndarray
+    ):
         """
         Calculate the observed spectral flux density at a given redshift z.
         This method should account for z effects on the spectral flux density.
@@ -135,7 +163,7 @@ class TransientSource(BaseSource):
         return flux.f_lambda(z, DL, ld)
 
     @forward
-    def spectral_flux_density_frequency(self, nu, t):
+    def spectral_flux_density_frequency(self, nu: jnp.ndarray, t: jnp.ndarray):
         w = c_nm / nu
         f_l = self.spectral_flux_density(w, t)
         return flux.f_nu(w, f_l)

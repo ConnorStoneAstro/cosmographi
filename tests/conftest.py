@@ -18,7 +18,7 @@ def mark_time(request):
 
     yield
 
-    _TIMING_RESULTS[key] = time.process_time() - start
+    _TIMING_RESULTS[key] = round(time.process_time() - start, 3)
 
 
 @pytest.hookimpl(hookwrapper=True)

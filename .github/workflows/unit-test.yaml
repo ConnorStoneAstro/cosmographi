@@ -58,7 +58,11 @@ jobs:
             ${{ github.workspace }}/outliers.json
           if [[ -f outliers.json ]]; then
             echo "Slow tests found!!" > slow-tests.json
-            jq --color-output . outliers.json >> slow-tests.json
+            cat outliers.json | jq -r '.[] |
+              (keys - ["test", "median", "total_runs"])[0] as $ts |
+              .[$ts] as $duration |
+              "- **\(.test)** duration: \($duration), median: \(.median), run count: \(.total_runs)"' \
+              >> slow-tests.json
           fi
       - name: Report slow tests
         uses: mshick/add-pr-comment@v2

@@ -43,10 +43,12 @@ jobs:
         id: cache-restore
         uses: actions/cache/restore@v5
         with:
-          path: ${{ github.workspace }}/test_timings.json
-          key: "test-timings"
+          restore-keys: |
+            test-timings-
+          path: test_timings.json
+          key: "test-timings-${{ github.run_id }}"
       - name: Run test times comparison
-        if: steps.cache-restore.outputs.cache-hit == 'true'
+        if: ${{ hashFiles('test_timings.json') != '' }}
         run: |
           python3 ${{ github.workspace }}/src/cosmographi/scripts/compare_times.py \
             ${{ github.workspace }}/test_timings.json \
@@ -63,13 +65,13 @@ jobs:
         with:
           message-path: slow-tests.json
       - name: Prepare initial times for cache if empty
-        if: steps.cache-restore.outputs.cache-hit != 'true'
+        if: ${{ hashFiles('test_timings.json') == '' }}
         run: mv test_timings_latest.json test_timings.json
       - name: Update cache
         uses: actions/cache/save@v5
         with:
-          path: ${{ github.workspace }}/test_timings.json
-          key: "test-timings"
+          path: test_timings.json
+          key: "test-timings-${{ github.run_id }}-${{ github.run_id }}"
       - name: Code cov
         uses: codecov/codecov-action@v5
         with:

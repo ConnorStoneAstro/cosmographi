@@ -11,7 +11,6 @@ on:
 
 jobs:
   unit-tests:
-    environment: CI
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
@@ -44,10 +43,10 @@ jobs:
         uses: actions/cache/restore@v5
         with:
           restore-keys: |
-            test-timings-${{ github.run_id }}-
-            test-timings-
+            test-timings-${{ runner.os }}-${{ matrix.python-version }}-${{ github.run_id }}-
+            test-timings-${{ runner.os }}-${{ matrix.python-version }}-
           path: test_timings.json
-          key: "test-timings-${{ github.run_id }}-${{ github.run_attempt }}"
+          key: "test-timings-${{ runner.os }}-${{ matrix.python-version }}-${{ github.run_id }}-${{ github.run_attempt }}"
       - name: Run test times comparison
         if: ${{ hashFiles('test_timings.json') != '' }}
         run: |
@@ -57,18 +56,19 @@ jobs:
             ${{ github.workspace }}/test_timings.json \
             ${{ github.workspace }}/outliers.json
           if [[ -f outliers.json ]]; then
-            echo "Slow tests found!!" > slow-tests.json
+            echo "Slow tests found for Python${{ matrix.python-version }} on ${{ matrix.python-version }}!!" > slow-tests.json
             cat outliers.json | jq -r '.[] |
               (keys - ["test", "median", "total_runs"])[0] as $ts |
               .[$ts] as $duration |
               "- **\(.test)** duration: \($duration), median: \(.median), run count: \(.total_runs)"' \
-              >> slow-tests.json
+              >> slow-tests.md
+              cat slow-tests.md
           fi
       - name: Report slow tests
         uses: mshick/add-pr-comment@v2
-        if:  ${{ hashFiles('slow-tests.json') != '' }}
+        if:  ${{ hashFiles('slow-tests.md') != '' }}
         with:
-          message-path: slow-tests.json
+          message-path: slow-tests.md
       - name: Prepare initial times for cache if empty
         if: ${{ hashFiles('test_timings.json') == '' }}
         run: mv test_timings_latest.json test_timings.json
@@ -76,7 +76,7 @@ jobs:
         uses: actions/cache/save@v5
         with:
           path: test_timings.json
-          key: "test-timings-${{ github.run_id }}-${{ github.run_attempt }}"
+          key: "test-timings-${{ runner.os }}-${{ matrix.python-version }}-${{ github.run_id }}-${{ github.run_attempt }}"
       - name: Code cov
         uses: codecov/codecov-action@v5
         with:

@@ -1,6 +1,7 @@
 import datetime
 import json
 from pathlib import Path
+from os import getenv
 import time
 from typing import Dict
 
@@ -9,8 +10,10 @@ import pytest
 
 _TIMING_RESULTS: Dict[str, float] = {}
 
+_TIMING_EXEMPT = []
 
-@pytest.fixture
+
+@pytest.fixture(autouse=True)
 def mark_time(request):
 
     start = time.process_time()
@@ -18,7 +21,9 @@ def mark_time(request):
 
     yield
 
-    _TIMING_RESULTS[key] = round(time.process_time() - start, 3)
+    # only run in GH action environments
+    if getenv("GITHUB_ACTION") is not None and key not in _TIMING_EXEMPT:
+        _TIMING_RESULTS[key] = round(time.process_time() - start, 3)
 
 
 @pytest.hookimpl(hookwrapper=True)

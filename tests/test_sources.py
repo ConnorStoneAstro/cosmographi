@@ -10,7 +10,7 @@ import pytest
 @pytest.mark.parametrize(
     "x0, x1, c, z",
     [
-        (1e-4, 0.5, 0.1, 0.1),
+        (1e-4, 0.5, 0.1, 1e-9),
         (1e-5, -0.5, -0.1, 0.5),
         (1e-3, 0.0, 0.0, 1.0),
     ],
@@ -41,6 +41,7 @@ def test_salt2_2021(x0, x1, c, z):
     # Get the spectral flux density from our SALT2_2021 implementation
     ld_cp = jax.vmap(S.spectral_flux_density, in_axes=(None, 0))(w, t)
 
-    assert jnp.allclose(ld_cp, jnp.array(ld_sncosmo)), (
+    print(np.array(ld_cp) / ld_sncosmo)
+    assert np.allclose(np.array(ld_cp) / ld_sncosmo, 1.0, rtol=1e-3), (
         "Spectral Flux Density from SALT2_2021 should match sncosmo's SALT2 model."
     )

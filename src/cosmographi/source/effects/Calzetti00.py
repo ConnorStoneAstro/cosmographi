@@ -1,10 +1,10 @@
 from caskade import Param, forward
 
-from .base import BaseSourceEffect
+from .base import SourceEffect
 from ...utils import calzetti00_extinction_law
 
 
-class HostExtinction_Calzetti00(BaseSourceEffect):
+class HostExtinction_Calzetti00(SourceEffect):
     def __init__(self, *args, A_V_c00h=None, R_V_c00h=4.05, c00h_active=True, **kwargs):
         super().__init__(*args, **kwargs)
         self.A_V_c00h = Param(
@@ -30,7 +30,7 @@ class HostExtinction_Calzetti00(BaseSourceEffect):
         return ld * 10 ** (-0.4 * ext)
 
 
-class MWExtinction_Calzetti00(BaseSourceEffect):
+class MWExtinction_Calzetti00(SourceEffect):
     def __init__(self, *args, A_V_c00mw=None, R_V_c00mw=4.05, c00mw_active=True, **kwargs):
         super().__init__(*args, **kwargs)
         self.A_V_c00mw = Param(

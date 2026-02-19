@@ -3,7 +3,7 @@ from .base import Throughput
 from ..utils import bands
 
 
-class LSSTThroughput(Throughput):
+class RubinThroughput(Throughput):
     def __init__(self):
         self.bands = ["LSST_u", "LSST_g", "LSST_r", "LSST_i", "LSST_z", "LSST_y"]
         super().__init__(

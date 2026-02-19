@@ -1,9 +1,11 @@
 import jax.numpy as jnp
+from caskade import Module
+
 from ..utils.helpers import trim_and_pad_batch
 from ..utils import flux
 
 
-class Throughput:
+class Throughput(Module):
     """Stores throughput curves
 
     These combine bandpass filters, atmosphere throughput, mirror/lens and other
@@ -26,8 +28,9 @@ class Throughput:
         Transmission array for the throughput curves. Should be 2D with shape (n_filters, n_wavelengths).
     """
 
-    def __init__(self, names: list[str], w: jnp.ndarray, T: jnp.ndarray):
-        self.names = names
+    def __init__(self, bands: list[str], w: jnp.ndarray, T: jnp.ndarray, name=None):
+        super().__init__(name=name)
+        self.bands = bands
         self.set_throughput(w, T)
 
     def set_throughput(self, w: jnp.ndarray, T: jnp.ndarray):
@@ -50,5 +53,5 @@ class Throughput:
     def __getitem__(self, key):
         """Get the wavelength and transmission for a given filter by name."""
         if isinstance(key, str):
-            key = self.names.index(key)
+            key = self.bands.index(key)
         return self.w[key], self.T[key]

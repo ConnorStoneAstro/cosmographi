@@ -1,13 +1,13 @@
 import jax.numpy as jnp
 import jax
-from cosmographi.throughput import LSSTThroughput
+from cosmographi.throughput import RubinThroughput
 from cosmographi.utils import flux
 
 
 def test_ABMag_consistency():
     f = 3631 * 1e-23  # Convert Jy to erg/s/cm^2/Hz
 
-    throughput = LSSTThroughput()
+    throughput = RubinThroughput()
 
     # photons/s/cm^2 in each band computed using f_nu and f_lambda should be consistent
     bandflux_nu = jax.vmap(flux.f_nu_band, in_axes=(0, None, 0))(throughput.nu, f, throughput.T_nu)

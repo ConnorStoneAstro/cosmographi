@@ -71,7 +71,9 @@ class SALT2_2021(TransientSource):
         f_l = x0 * (M0 + x1 * M1) * jnp.exp(c * CL)
         return jnp.interp(w, self.wavelength_nodes, f_l)
 
-    def load_salt2_model(self, directory):
+    def load_salt2_model(self, directory=None):
+        if directory is None:
+            directory = os.path.join(os.path.dirname(__file__), "data/SALT2_2021/")
         phase0, wavelength0, M0 = load_salt2_surface(
             os.path.join(directory, "salt2_template_0.dat")
         )

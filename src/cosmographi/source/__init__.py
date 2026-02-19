@@ -1,7 +1,7 @@
 from .blackbody import StaticBlackbody, TransientBlackbody
 from .factory import source_factory
 from .salt2 import SALT2_2021
-from .base import BaseSource, TransientSource, StaticSource
+from .base import Source, TransientSource, StaticSource
 from . import effects
 
 __all__ = (
@@ -10,7 +10,7 @@ __all__ = (
     "source_factory",
     "SALT2_2021",
     "effects",
-    "BaseSource",
+    "Source",
     "TransientSource",
     "StaticSource",
 )

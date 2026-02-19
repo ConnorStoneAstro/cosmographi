@@ -1,17 +1,12 @@
 from typing import Optional
 from .base import MagSystem
 import jax.numpy as jnp
-import jax
 from ..throughput.base import Throughput
 from ..utils import flux
 
 
 class MagAB(MagSystem):
-    def __init__(self):
-        super().__init__()
-        self.name = "AB"
-
-    def flux_norm(self, throughput: Throughput):
+    def flux_norm(self, band_i: int, throughput: Throughput):
         """
         Return the normalization flux for the AB magnitude system and given
         throughput. This is computed assuming a flat spectrum in f_nu
@@ -30,7 +25,7 @@ class MagAB(MagSystem):
         """
         # AB magnitude system normalization flux in erg/s/cm^2/Hz
         f = 3631 * 1e-23  # Convert Jy to erg/s/cm^2/Hz
-        return jax.vmap(flux.f_nu_band, in_axes=(0, None, 0))(throughput.nu, f, throughput.T_nu)
+        return flux.f_nu_band(throughput.nu[band_i], f, throughput.T_nu[band_i])
 
     def __call__(self, fluxes: jnp.ndarray, flux_norm: Optional[jnp.ndarray] = None):
         """

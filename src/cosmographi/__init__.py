@@ -3,15 +3,24 @@ from . import (
     sn,
     detect,
     rates,
-    source,
     survey,
     likelihood,
     sims,
     utils,
-    throughput,
-    instrument,
-    magsystem,
 )
+from .source import (
+    Source,
+    TransientSource,
+    StaticSource,
+    effects,
+    SALT2_2021,
+    source_factory,
+    StaticBlackbody,
+    TransientBlackbody,
+)
+from .instrument import Instrument, RubinObservatory
+from .throughput import Throughput, RubinThroughput
+from .magsystem import MagSystem, MagAB
 from .cosmology import Cosmology
 
 import jax
@@ -25,13 +34,23 @@ __all__ = (
     "sn",
     "detect",
     "rates",
-    "source",
+    "Source",
+    "TransientSource",
+    "StaticSource",
+    "effects",
+    "SALT2_2021",
+    "source_factory",
+    "StaticBlackbody",
+    "TransientBlackbody",
     "survey",
     "likelihood",
     "sims",
     "utils",
-    "throughput",
-    "instrument",
-    "magsystem",
+    "Instrument",
+    "RubinObservatory",
+    "Throughput",
+    "RubinThroughput",
+    "MagSystem",
+    "MagAB",
     "Cosmology",
 )

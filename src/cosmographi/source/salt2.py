@@ -60,7 +60,7 @@ class SALT2_2021(TransientSource):
     def colour_law(self, w, CL):
         w_mod = (w - self.SALT2CL_B) / (self.SALT2CL_V - self.SALT2CL_B)
         CL = jnp.concatenate(
-            (jnp.zeros(1), 1 - jnp.sum(CL), CL)
+            (jnp.zeros(1), 1 - jnp.sum(CL)[None], CL)
         )  # alpha is 1 - sum of the other coefficients
         CL_edge_vals = jnp.polyval(CL[::-1], self.CL_wrange)
         dCL_edge_vals = jnp.polyval((CL[1:] * jnp.arange(1, len(CL)))[::-1], self.CL_wrange)

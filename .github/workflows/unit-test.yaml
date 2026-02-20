@@ -53,22 +53,24 @@ jobs:
           python3 ${{ github.workspace }}/src/cosmographi/scripts/compare_times.py \
             ${{ github.workspace }}/test_timings.json \
             ${{ github.workspace }}/test_timings_latest.json \
-            ${{ github.workspace }}/test_timings.json \
-            ${{ github.workspace }}/outliers.json
+            ${{ github.workspace }}/outliers.json \
+            ${{ github.workspace }}/flakes.json \
+            ${{ github.workspace }}/test_timings.json
+          touch bad-tests.md
           if [[ -f outliers.json ]]; then
-            echo "Slow tests found for Python${{ matrix.python-version }} on ${{ matrix.python-version }}!!" > slow-tests.json
+            cat outliers.json
+            echo "Slow tests found for Python${{ matrix.python-version }} on ${{ matrix.python-version }}!!" > bad-tests.md
             cat outliers.json | jq -r '.[] |
-              (keys - ["test", "median", "total_runs"])[0] as $ts |
+              (keys - ["test", "median", "total_runs", "std"])[0] as $ts |
               .[$ts] as $duration |
-              "- **\(.test)** duration: \($duration), median: \(.median), run count: \(.total_runs)"' \
-              >> slow-tests.md
-              cat slow-tests.md
+              "- **\(.test)** duration: \($duration), median: \(.median), std: \(.std), run count: \(.total_runs)"' \
+              >> bad-tests.md
           fi
-      - name: Report slow tests
-        uses: mshick/add-pr-comment@v2
-        if:  ${{ hashFiles('slow-tests.md') != '' }}
-        with:
-          message-path: slow-tests.md
+          cat bad-tests.md
+          # we'll have flakes later, too
+          if [[ ! -f outliers.json ]]; then
+              rm bad-tests.md
+          fi
       - name: Prepare initial times for cache if empty
         if: ${{ hashFiles('test_timings.json') == '' }}
         run: mv test_timings_latest.json test_timings.json
@@ -77,6 +79,17 @@ jobs:
         with:
           path: test_timings.json
           key: "test-timings-${{ runner.os }}-${{ matrix.python-version }}-${{ github.run_id }}-${{ github.run_attempt }}"
+      - name: Report bad tests
+        uses: mshick/add-pr-comment@v2
+        if:  ${{ hashFiles('bad-tests.md') != '' }}
+        with:
+          message-path: bad-tests.md
+      - name: Clear bad tests
+        uses: mshick/add-pr-comment@v2
+        if:  ${{ hashFiles('bad-tests.md') == '' }}
+        with:
+          update-only: true
+          message: All bad tests fixed!
       - name: Code cov
         uses: codecov/codecov-action@v5
         with:

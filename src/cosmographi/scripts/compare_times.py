@@ -6,7 +6,8 @@ import pandas as pd
 def compare_test_times(
     cached_timings_path: str,
     new_timings_path: str,
-    results_save_path: str,
+    outliers_save_path: str,
+    flakes_save_path: str,
     cache_save_path: str,
     max_cols: int = 50,
 ) -> None:
@@ -22,8 +23,10 @@ def compare_test_times(
         The path to the JSON with the previous timings
     new_timings_path : str
         The path to the JSON with the new timings
-    results_save_path : str
-        The path where the results (outliers) should be saved, if they exist
+    outliers_save_path : str
+        The path where the outliers should be saved, if they exist
+    flakes_save_path : str
+        The path where the flakes should be saved, if they exist
     cache_save_path : str
         The path where the new timimgs (including current) should be saved
     max_cols: int, optional
@@ -38,16 +41,26 @@ def compare_test_times(
     df = pd.DataFrame(cached_timings)
 
     df.set_index("test", drop=True, inplace=True)
-    medians = df.median(axis=1).to_frame(name="median")
+
+    median_stds = (
+        df.std(axis=1)
+        .round(3)
+        .to_frame(name="std")
+        .merge(
+            df.median(axis=1).round(3).to_frame(name="median"), left_index=True, right_index=True
+        )
+    )
 
     df_new = pd.DataFrame(new_timings)
 
     df_new.set_index("test", drop=True, inplace=True)
 
     # join by test
-    compare = pd.merge(medians, df_new, how="inner", left_index=True, right_index=True)
+    compare = pd.merge(df_new, median_stds, how="inner", left_index=True, right_index=True)
 
-    outliers = compare[compare.iloc[:, 1] > compare.iloc[:, 0] * 1.25].reset_index(drop=False)
+    outliers = compare[
+        compare.loc[:, "median"] + (compare.loc[:, "std"] * 3) < compare.iloc[:, 0]
+    ].reset_index(drop=False)
 
     new_cached = (
         pd.merge(df, df_new, how="outer", left_index=True, right_index=True)
@@ -59,7 +72,7 @@ def compare_test_times(
 
     if len(outliers):
         outliers["total_runs"] = new_cached.count(axis=1)
-        outliers.to_json(results_save_path, orient="records")
+        outliers.to_json(outliers_save_path, orient="records")
 
 
 if __name__ == "__main__":  # pragma: no cover
@@ -80,15 +93,21 @@ if __name__ == "__main__":  # pragma: no cover
     )
 
     parser.add_argument(
-        "cache_save_path",
+        "outliers_save_path",
         type=str,
-        help="Path where the new timings should be saved.",
+        help="Path where the outliers should be saved.",
     )
 
     parser.add_argument(
-        "results_save_path",
+        "flakes_save_path",
         type=str,
-        help="Path where the new results should be saved.",
+        help="Path where the flakds should be saved.",
+    )
+
+    parser.add_argument(
+        "cache_save_path",
+        type=str,
+        help="Path where the new timings should be saved.",
     )
 
     parser.add_argument(

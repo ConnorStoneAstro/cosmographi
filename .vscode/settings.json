@@ -3,4 +3,12 @@
     "python-envs.pythonProjects": [],
     "notebook.defaultFormatter": "charliermarsh.ruff",
     "editor.defaultFormatter": "charliermarsh.ruff",
+    "[python]": {
+        "editor.defaultFormatter": "charliermarsh.ruff"
+    },
+    "python.testing.pytestArgs": [
+        "tests"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true,
 }

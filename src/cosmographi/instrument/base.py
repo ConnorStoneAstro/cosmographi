@@ -59,7 +59,8 @@ class Instrument(Module):
             The observed flux of the source through the specified filter, in electrons/s/cm^2.
         """
         f = self._observe_spectrum(band_i, source, *args, **kwargs)
-        F = flux.f_lambda_band(self.throughput.w[band_i], f, self.throughput.T[band_i])
+        w = self.throughput.w[band_i]
+        F = flux.f_lambda_band(w, f, self.throughput.T(w, band_i))
         return F
 
     def flux_var(self, band_i, exp_time, source: Source, *args, **kwargs):
@@ -135,18 +136,27 @@ class Instrument(Module):
         source : BaseSource
             The source to observe.
         *args, **kwargs
-            Additional arguments to pass to the source's spectral_flux_density method. Note that the wavelength argument (w) is provided by the Throughput object and should not be passed in by the user.
+            Additional arguments to pass to the source's spectral_flux_density
+            method. Note that the wavelength argument (w) is provided by the
+            Throughput object and should not be passed in by the user.
 
         Returns
         -------
         flux_obs : float
-            The observed flux of the source through the specified filter, normalized by the magnitude system's reference flux, including noise.
+            The observed flux of the source through the specified filter,
+            normalized by the magnitude system's reference flux, including
+            noise.
         flux_err_obs : float
-            The observed uncertainty on the flux of the source through the specified filter, normalized by the magnitude system's reference flux, including noise.
+            The observed uncertainty on the flux of the source through the
+            specified filter, normalized by the magnitude system's reference
+            flux, including noise.
         flux_true : float
-            The true flux of the source through the specified filter, normalized by the magnitude system's reference flux, without noise.
+            The true flux of the source through the specified filter, normalized
+            by the magnitude system's reference flux, without noise.
         flux_err_true : float
-            The true uncertainty on the flux of the source through the specified filter, normalized by the magnitude system's reference flux, without noise.
+            The true uncertainty on the flux of the source through the specified
+            filter, normalized by the magnitude system's reference flux, without
+            noise.
 
         Note
         ----

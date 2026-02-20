@@ -25,7 +25,8 @@ class MagAB(MagSystem):
         """
         # AB magnitude system normalization flux in erg/s/cm^2/Hz
         f = 3631 * 1e-23  # Convert Jy to erg/s/cm^2/Hz
-        return flux.f_nu_band(throughput.nu[band_i], f, throughput.T_nu[band_i])
+        nu = flux.nu(throughput.w[band_i])[::-1]
+        return flux.f_nu_band(nu, f, throughput.T_nu(nu, band_i))
 
     def __call__(self, fluxes: jnp.ndarray, flux_norm: Optional[jnp.ndarray] = None):
         """

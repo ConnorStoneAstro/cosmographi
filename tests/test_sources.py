@@ -5,6 +5,27 @@ import sncosmo
 import numpy as np
 from scipy.optimize import root
 import pytest
+from astropy.modeling.physical_models import BlackBody
+from astropy import units as u
+
+
+@pytest.mark.parametrize("T", [1000, 5000, 15000])
+def test_blackbody(T):
+    z = 0.1
+    C = cp.Cosmology()
+    S = cp.StaticBlackbody(cosmology=C, T=T, R=1, N=1, z=z)
+    w = jnp.linspace(100, 2000, 100)  # Wavelengths in nm
+    sfd_cp = S.spectral_flux_density_frequency(cp.utils.flux.nu(w))  # in units of erg/s/cm^2/Hz
+
+    # Astropy blackbody
+    LD = C.luminosity_distance(z) * cp.utils.constants.Mpc_to_cm  # Convert from Mpc to cm
+    bb = BlackBody(temperature=T * u.K)
+    luminosity_density = np.pi * (4 * np.pi) * bb(w * u.nm)  # in units of erg/s/Hz
+    sfd_astropy = luminosity_density / (4 * jnp.pi * (1 + z) * LD**2)  # in units of erg/s/cm^2/Hz
+
+    assert np.allclose(sfd_cp, sfd_astropy.value, rtol=1e-5, atol=0), (
+        "Spectral flux density from StaticBlackbody should match astropy's BlackBody model."
+    )
 
 
 @pytest.mark.parametrize(

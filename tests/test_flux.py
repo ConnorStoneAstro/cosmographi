@@ -1,5 +1,4 @@
 import jax.numpy as jnp
-import jax
 from cosmographi.throughput import RubinThroughput
 from cosmographi.utils import flux
 
@@ -10,14 +9,15 @@ def test_ABMag_consistency():
     throughput = RubinThroughput()
 
     # photons/s/cm^2 in each band computed using f_nu and f_lambda should be consistent
-    bandflux_nu = jax.vmap(flux.f_nu_band, in_axes=(0, None, 0))(throughput.nu, f, throughput.T_nu)
-    bandflux_w = jax.vmap(flux.f_lambda_band, in_axes=(0, 0, 0))(
-        throughput.w, flux.f_l(throughput.nu[:, ::-1], f), throughput.T
-    )
+    for i in range(len(throughput.bands)):
+        bandflux_nu = flux.f_nu_band(throughput.nu[i], f, throughput.T_nu(throughput.nu[i], i))
+        bandflux_w = flux.f_lambda_band(
+            throughput.w[i], flux.f_l(throughput.nu[i], f)[::-1], throughput.T(throughput.w[i], i)
+        )
 
-    assert jnp.allclose(bandflux_nu, bandflux_w), (
-        "Fluxes computed in f_nu and f_lambda should be consistent."
-    )
+        assert jnp.allclose(bandflux_nu, bandflux_w), (
+            "Fluxes computed in f_nu and f_lambda should be consistent."
+        )
 
 
 def test_f_round_trip():

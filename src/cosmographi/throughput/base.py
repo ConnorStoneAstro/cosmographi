@@ -50,7 +50,7 @@ class Throughput(Module):
 
     def T_nu(self, nu, b):
         """Total transmission in frequency space."""
-        return self.T(flux.w(nu), b)[::-1]
+        return self.T(flux.w(nu), b)
 
     @property
     def w(self):
@@ -65,12 +65,6 @@ class Throughput(Module):
         """Trim the wavelength range for each filter to where the transmission is above a threshold."""
 
         self._w, self._T = trim_and_pad_batch(self._w, self._T, threshold)
-
-    def __getitem__(self, key):
-        """Get the wavelength and transmission for a given filter by name."""
-        if isinstance(key, str):
-            key = self.bands.index(key)
-        return self.w[key], self.T(self.w[key], key)
 
 
 class Throughput_wAtmos(Throughput):

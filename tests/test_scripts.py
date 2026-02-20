@@ -33,20 +33,23 @@ def test_compare_times(tmp_path):
 
     # we have 2 outliers here, "test_foo" and "test_bar"
     latest_times = {
-        "test": ["test_foo", "test_bar", "test_baz", "test_new", "test_second"],
-        "2026-02-16 15:59:24": [
-            threshes[0] + 0.1,
-            threshes[1] + 0.5,
-            threshes[2] - 0.01,
-            100,  # doen't matter, first run
-            1.001,  # doesn't matter, thresh is na if only 1 in cache
+        "datetime": "2026-01-01",
+        "benchmarks": [
+            {"fullname": "test_foo", "stats": {"median": threshes[0] + 0.1}},
+            {"fullname": "test_bar", "stats": {"median": threshes[1] + 0.5}},
+            {"fullname": "test_baz", "stats": {"median": threshes[2] - 0.1}},
+            {"fullname": "test_new", "stats": {"median": 100}},  # doesn't matter, first run
+            {
+                "fullname": "test_second",
+                "stats": {"median": 100},
+            },  # doesn't matter, thresh is no if only 1 in cache
         ],
     }
 
     cached_path = tmpdir / "cached.json"
     latest_path = tmpdir / "latest.json"
     cache_save_path = tmpdir / "new_cache.json"
-    outliers_save_path = tmpdir / "outliers.json"
+    outliers_save_path = tmpdir / "outliers.md"
     flakes_save_path = tmpdir / "flakes.json"
 
     with open(cached_path, "w") as f:
@@ -56,12 +59,19 @@ def test_compare_times(tmp_path):
         json.dump(latest_times, f)
 
     compare_test_times(
-        cached_path, latest_path, outliers_save_path, flakes_save_path, cache_save_path
+        cached_benchmarks_path=cached_path,
+        new_benchmarks_path=latest_path,
+        outliers_save_path=outliers_save_path,
+        flakes_save_path=flakes_save_path,
+        cache_save_path=cache_save_path,
     )
 
     new_df = pd.read_json(cache_save_path)
 
-    outliers = pd.read_json(outliers_save_path)
+    outliers = pd.read_table(outliers_save_path, delimiter="|", skiprows=[1], header=0)
+    # handle md table weirdness
+    outliers.columns = [c.strip() for c in outliers.columns]
+    outliers["test"] = [c.strip() for c in outliers["test"]]
 
     # assert that we have 2 outliers
     assert len(outliers) == 2
@@ -69,8 +79,8 @@ def test_compare_times(tmp_path):
     # assert that our total run count discards NaNs
     foo_outlier = outliers[outliers["test"] == "test_foo"]
     assert foo_outlier["total_runs"].item() == 4
-    assert foo_outlier["median"].item() == np.nanmedian(foo_test).round(3)
-    assert foo_outlier["std"].item() == np.nanstd(foo_test, ddof=1).round(3)
+    assert np.isclose(foo_outlier["median"].item(), np.nanmedian(foo_test))
+    assert np.isclose(foo_outlier["std"].item(), np.nanstd(foo_test, ddof=1))
 
     # assert that our new cached times have 6 tests (5 existing, 1 new)
     assert len(new_df) == 6
@@ -78,3 +88,21 @@ def test_compare_times(tmp_path):
     # assert that our new cached times have 4 dates (3 existing, 1 new),
     # plus the test name column
     assert len(new_df.columns) == 5
+
+    empty_cache_path = tmpdir / "empty.json"
+
+    # test we can pass in an empty path and get a fresh cache
+    compare_test_times(
+        cached_benchmarks_path=empty_cache_path,
+        new_benchmarks_path=latest_path,
+        outliers_save_path=outliers_save_path,
+        flakes_save_path=flakes_save_path,
+        cache_save_path=empty_cache_path,
+        save_latest_if_no_cache=True,
+    )
+
+    fresh_cache = pd.read_json(empty_cache_path)
+    # we expect only test and timestamps cols
+    assert len(fresh_cache.columns) == 2
+    # 5 tests in the latest 'run'
+    assert len(fresh_cache) == 5

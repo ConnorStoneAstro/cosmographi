@@ -36,61 +36,63 @@ jobs:
           UV_SYSTEM_PYTHON: 1
       - name: Run tests
         run: |
-          pytest --cov=src tests/
-          mv test_timings.json test_timings_latest.json
+          pytest --benchmark-quiet --benchmark-json test_benchmarks_latest.json --cov=src tests/
       - name: Restore test time cache
         id: cache-restore
         uses: actions/cache/restore@v5
         with:
           restore-keys: |
-            test-timings-${{ runner.os }}-${{ matrix.python-version }}-${{ github.run_id }}-
-            test-timings-${{ runner.os }}-${{ matrix.python-version }}-
-          path: test_timings.json
-          key: "test-timings-${{ runner.os }}-${{ matrix.python-version }}-${{ github.run_id }}-${{ github.run_attempt }}"
-      - name: Run test times comparison
-        if: ${{ hashFiles('test_timings.json') != '' }}
+            test-benchmarks-${{ runner.os }}-${{ matrix.python-version }}-${{ github.run_id }}-
+            test-benchmarks-${{ runner.os }}-${{ matrix.python-version }}-
+          path: cached_benchmarks.json
+          # key: "cached-benchmarks-${{ runner.os }}-${{ matrix.python-version }}-${{ github.run_id }}-${{ github.sha }}"
+          key: "cached-benchmarks-${{ runner.os }}-${{ matrix.python-version }}-${{ github.run_id }}-${{ github.run_attempt }}"
+      # - name: Run test times comparison for push
+      #   if: github.event_name == 'push'
+      #   run: |
+      #     python3 ${{ github.workspace }}/src/cosmographi/scripts/compare_times.py \
+      #       ${{ github.workspace }}/cached_benchmarks.json \
+      #       ${{ github.workspace }}/test_benchmarks_latest.json \
+      #       ${{ github.workspace }}/outliers.md \
+      #       ${{ github.workspace }}/flakes.md \
+      #       ${{ github.workspace }}/cached_benchmarks.json \
+      #       --save_latest_if_no_cache
+      - name: Run test times comparison for PR
+      # if: github.event_name == 'pull_request' && hashFiles('cached_benchmarks.json') != ''
         run: |
           python3 ${{ github.workspace }}/src/cosmographi/scripts/compare_times.py \
-            ${{ github.workspace }}/test_timings.json \
-            ${{ github.workspace }}/test_timings_latest.json \
-            ${{ github.workspace }}/outliers.json \
-            ${{ github.workspace }}/flakes.json \
-            ${{ github.workspace }}/test_timings.json
-          touch bad-tests.md
-          if [[ -f outliers.json ]]; then
-            cat outliers.json
-            echo "Slow tests found for Python${{ matrix.python-version }} on ${{ matrix.python-version }}!!" > bad-tests.md
-            cat outliers.json | jq -r '.[] |
-              (keys - ["test", "median", "total_runs", "std"])[0] as $ts |
-              .[$ts] as $duration |
-              "- **\(.test)** duration: \($duration), median: \(.median), std: \(.std), run count: \(.total_runs)"' \
-              >> bad-tests.md
+            ${{ github.workspace }}/cached_benchmarks.json \
+            ${{ github.workspace }}/test_benchmarks_latest.json \
+            ${{ github.workspace }}/outliers.md \
+            ${{ github.workspace }}/flakes.md \
+            ${{ github.workspace }}/cached_benchmarks.json \
+            --save_latest_if_no_cache
+
+          if [[ -f outliers.md ]]; then
+            sed -i '1i ##Slow tests found!\n' outliers.md
+            echo "" >> outliers.md
+            cat outliers.md
           fi
-          cat bad-tests.md
-          # we'll have flakes later, too
-          if [[ ! -f outliers.json ]]; then
-              rm bad-tests.md
-          fi
-      - name: Prepare initial times for cache if empty
-        if: ${{ hashFiles('test_timings.json') == '' }}
-        run: mv test_timings_latest.json test_timings.json
       - name: Update cache
+      # if: github.event_name == 'push'
         uses: actions/cache/save@v5
         with:
-          path: test_timings.json
-          key: "test-timings-${{ runner.os }}-${{ matrix.python-version }}-${{ github.run_id }}-${{ github.run_attempt }}"
+          path: cached_benchmarks.json
+          # key: "test-benchmarks-${{ runner.os }}-${{ matrix.python-version }}-${{ github.sha }}"
+          key: "test-benchmarks-${{ runner.os }}-${{ matrix.python-version }}-${{ github.run_id }}-${{ github.run_attempt }}"
       - name: Report bad tests
         uses: mshick/add-pr-comment@v2
-        if:  ${{ hashFiles('bad-tests.md') != '' }}
+        if: ${{ github.event_name == 'pull_request' && hashFiles('outliers.md') != '' }}
         with:
-          message-path: bad-tests.md
+          message-path: outliers.md
       - name: Clear bad tests
         uses: mshick/add-pr-comment@v2
-        if:  ${{ hashFiles('bad-tests.md') == '' }}
+        if: ${{ github.event_name == 'pull_request' && hashFiles('outliers.md') == '' }}
         with:
           update-only: true
-          message: All bad tests fixed!
+          message: \##All bad tests fixed!
       - name: Code cov
+        if: ${{ github.event_name == 'pull_request' }}
         uses: codecov/codecov-action@v5
         with:
           fail_ci_if_error: true

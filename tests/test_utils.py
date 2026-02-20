@@ -5,11 +5,18 @@ import pytest
 import cosmographi as cg
 
 
-def test_quad_integrate():
+def test_quad_integrate(benchmark):
 
     f = lambda x: x**2
     a = 0.0
     b = 1.0
+
+    benchmark.pedantic(
+        lambda: cg.utils.quad(f, a, b, 50).block_until_ready(),
+        warmup_rounds=5,
+        rounds=10,
+        iterations=50,
+    )
     result = cg.utils.quad(f, a, b, n=50)
     expected = 1.0 / 3.0
     assert jnp.isclose(result, expected, rtol=1e-8)
@@ -20,10 +27,18 @@ def test_quad_integrate():
     assert jnp.isclose(log_result, log_expected, rtol=1e-8)
 
 
-def test_gauss_rescale_integrate():
+def test_gauss_rescale_integrate(benchmark):
     f = lambda x: 1 - (x - 1) ** 2
     a = 0.0
     b = 2.0
+    benchmark.pedantic(
+        lambda: cg.utils.gauss_rescale_integrate(
+            f, a, b, mu=1.0, sigma=0.5, n=50
+        ).block_until_ready(),
+        warmup_rounds=5,
+        rounds=10,
+        iterations=50,
+    )
     result = cg.utils.gauss_rescale_integrate(f, a, b, mu=1.0, sigma=0.5, n=50)
     expected = 4.0 / 3.0
     assert jnp.isclose(result, expected, rtol=1e-8)

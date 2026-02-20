@@ -60,10 +60,14 @@ class SALT2_2021(TransientSource):
     def colour_law(self, w, CL):
         w_mod = (w - self.SALT2CL_B) / (self.SALT2CL_V - self.SALT2CL_B)
         CL = jnp.concatenate(
-            (jnp.zeros(1), 1 - jnp.sum(CL)[None], CL)
+            (
+                jnp.zeros(1),
+                1 - jnp.sum(CL)[None],
+                CL,
+            )
         )  # alpha is 1 - sum of the other coefficients
         CL_edge_vals = jnp.polyval(CL[::-1], self.CL_wrange)
-        dCL_edge_vals = jnp.polyval((CL[1:] * jnp.arange(1, len(CL)))[::-1], self.CL_wrange)
+        dCL_edge_vals = jnp.polyval((CL * jnp.arange(len(CL)))[1:][::-1], self.CL_wrange)
         corr = jnp.where(
             w_mod < self.CL_wrange[0],
             CL_edge_vals[0]
@@ -111,7 +115,9 @@ class SALT2_2021(TransientSource):
             "Wavelength gridding does not match for M0 and M1!"
         )
         # convert from spectral flux density to luminosity density (should just be 4 * pi * 10pc^2)
-        self.M = np.stack((M0, M1)) * (4 * np.pi * (10 * 1e-6 * Mpc_to_cm) ** 2)
+        self.M = (
+            np.stack((M0, M1)) * (4 * np.pi * (10 * 1e-6 * Mpc_to_cm) ** 2) * 10
+        )  # x10 to convert from /Angstrom to /nm
         self.phase_nodes = jnp.array(phase0)
         # Convert from angstroms to nm
         self.wavelength_nodes = jnp.array(wavelength0) / 10

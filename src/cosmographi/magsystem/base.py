@@ -1,13 +1,13 @@
 from abc import abstractmethod
+
+from caskade import Module
+
 from ..throughput.base import Throughput
 
 
-class MagSystem:
-    def __init__(self):
-        self.name = None  # Should be set by subclasses
-
+class MagSystem(Module):
     @abstractmethod
-    def flux_norm(self, throughput: Throughput):
+    def flux_norm(self, band_i, throughput: Throughput):
         """
         Return the normalization flux for the magnitude system and given throughput.
         This is used to convert fluxes to magnitudes.

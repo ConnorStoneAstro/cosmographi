@@ -1,4 +1,4 @@
-from . import constants
+from . import constants, flux
 from .bands import bands
 from .helpers import (
     midpoints,
@@ -17,6 +17,7 @@ from .extinction import fp99_extinction_law, fp99_extinction_law_knots, calzetti
 
 __all__ = (
     "constants",
+    "flux",
     "bands",
     "midpoints",
     "vmap_chunked1d",

@@ -1,3 +1,4 @@
-from .base import BaseInstrument
+from .base import Instrument
+from .rubin import RubinObservatory
 
-__all__ = ("BaseInstrument",)
+__all__ = ("Instrument", "RubinObservatory")

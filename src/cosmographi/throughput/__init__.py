@@ -1,4 +1,4 @@
 from .base import Throughput
-from .lsst import LSSTThroughput
+from .rubin import RubinThroughput
 
-__all__ = ("Throughput", "LSSTThroughput")
+__all__ = ("Throughput", "RubinThroughput")

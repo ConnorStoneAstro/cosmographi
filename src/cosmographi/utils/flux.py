@@ -73,6 +73,10 @@ def nu(w):
     return c_nm / w
 
 
+def w(nu):
+    return c_nm / nu
+
+
 def f_nu(w_l, f_l):
     """
     Calculate the observed spectral flux density in frequency units converted from wavelength units.

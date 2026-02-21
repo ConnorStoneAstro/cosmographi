@@ -9,7 +9,7 @@ from ..utils import flux
 from ..utils.constants import c_nm
 
 
-class BaseSource(Module):
+class Source(Module):
     """
     Base class for representing astronomical sources.
 
@@ -44,7 +44,7 @@ class BaseSource(Module):
         raise NotImplementedError("Please use a subclass of BaseSource")
 
 
-class StaticSource(BaseSource):
+class StaticSource(Source):
     """
     Class for representing static astronomical sources.
 
@@ -63,16 +63,16 @@ class StaticSource(BaseSource):
     def spectral_flux_density(self, w: jnp.ndarray, z: jnp.ndarray, mu: jnp.ndarray):
         ld = self.luminosity_density(w)
         DL = mu_to_luminosity_distance(mu) / 1e6  # Convert pc to Mpc
-        return flux.f_lambda(z, DL, w, ld)
+        return flux.f_lambda(z, DL, ld)
 
     @forward
     def spectral_flux_density_frequency(self, nu: jnp.ndarray):
         w = c_nm / nu
         f_l = self.spectral_flux_density(w)
-        return flux.f_nu(w, f_l)[1]
+        return flux.f_nu(w, f_l)
 
 
-class TransientSource(BaseSource):
+class TransientSource(Source):
     """
     Class for representing transient astronomical sources.
 

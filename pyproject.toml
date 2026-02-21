@@ -39,10 +39,10 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/ConnorStoneAstro/cosmographi"
+Homepage = "https://github.com/Cosmographi/cosmographi"
 Documentation = "https://cosmographi.readthedocs.io/en/latest/"
-Repository = "https://github.com/ConnorStoneAstro/cosmographi"
-Issues = "https://github.com/ConnorStoneAstro/cosmographi/issues"
+Repository = "https://github.com/Cosmographi/cosmographi"
+Issues = "https://github.com/Cosmographi/cosmographi/issues"
 
 [project.optional-dependencies]
 dev = [
@@ -51,6 +51,7 @@ dev = [
         "pytest-mock>=3.12,<4",
         "pre-commit>=3.6,<4",
         "ruff>=0.15.0",
+        "sncosmo==2.12.1",
 ]
 
 [tool.hatch.version]

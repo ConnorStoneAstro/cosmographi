@@ -11,11 +11,14 @@ class BaseSNRate(Module):
     Base class for supernova rate modules.
     """
 
-    def __init__(self, cosmology: Cosmology, z_min, z_max, **kwargs):
+    def __init__(
+        self, cosmology: Cosmology, z_min: float, z_max: float, solid_angle=4 * jnp.pi, **kwargs
+    ):
         super().__init__(**kwargs)
         self.cosmology = cosmology
         self.z_min = z_min
         self.z_max = z_max
+        self.solid_angle = solid_angle
 
     def rate_density(self, z):
         """
@@ -33,7 +36,7 @@ class BaseSNRate(Module):
         # dVdz = vdcv(z)
         # return jnp.trapezoid(rate_density * dVdz, z)
         integrand = lambda z: self.rate_density(z) * self.cosmology.differential_comoving_volume(z)
-        return quad(integrand, z1, z2, n=20)
+        return self.solid_angle * quad(integrand, z1, z2, n=20)
 
     def expectation(self, z1, z2, t):
         """
@@ -48,7 +51,7 @@ class BaseSNRate(Module):
         rate_density = self.rate_density(z)
         vdcv = jax.vmap(self.cosmology.differential_comoving_volume)
         dVdz = vdcv(z)
-        rate = rate_density * dVdz
+        rate = self.solid_angle * rate_density * dVdz
         P = rate / jnp.trapezoid(rate, z)
         return z, P
 

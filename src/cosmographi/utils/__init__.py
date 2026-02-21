@@ -1,4 +1,4 @@
-from . import constants
+from . import constants, flux
 from .bands import bands
 from .helpers import (
     midpoints,
@@ -18,6 +18,7 @@ from .survey import cross_match_survey_circle
 
 __all__ = (
     "constants",
+    "flux",
     "bands",
     "midpoints",
     "vmap_chunked1d",

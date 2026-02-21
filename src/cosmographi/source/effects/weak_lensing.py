@@ -1,8 +1,8 @@
 from caskade import Param, forward
-from .base import BaseSourceEffect
+from .base import SourceEffect
 
 
-class WeakLensing(BaseSourceEffect):
+class WeakLensing(SourceEffect):
     def __init__(self, *args, mu_wl=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.mu_wl = Param(

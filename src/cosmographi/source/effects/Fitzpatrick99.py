@@ -1,10 +1,10 @@
 from caskade import Param, forward
 
-from .base import BaseSourceEffect
+from .base import SourceEffect
 from ...utils import fp99_extinction_law
 
 
-class HostExtinction_Fitzpatrick99(BaseSourceEffect):
+class HostExtinction_Fitzpatrick99(SourceEffect):
     """
 
     Applies the Fitzpatrick 1999 extinction law in the rest frame of the source.
@@ -56,7 +56,7 @@ class HostExtinction_Fitzpatrick99(BaseSourceEffect):
         return ld * 10 ** (-0.4 * ext)
 
 
-class MWExtinction_Fitzpatrick99(BaseSourceEffect):
+class MWExtinction_Fitzpatrick99(SourceEffect):
     """
 
     Applies the Fitzpatrick 1999 extinction law in the observer frame to a source.

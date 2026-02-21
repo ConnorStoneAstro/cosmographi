@@ -34,5 +34,22 @@ def load_salt2_surface(surface_file):
 
 
 def load_salt2_colour_law(colour_file):
-    df = pd.read_csv(colour_file, sep=r"\s+", names=("wavelength", "dispersion"), comment="#")
-    return df["wavelength"].values, df["dispersion"].values
+    with open(colour_file, "r") as f:
+        lines = f.readlines()
+        ncoefs = None
+        coefs = []
+        lmin = None
+        lmax = None
+        for line in lines:
+            if line.startswith("#"):
+                continue
+            if ncoefs is None:
+                ncoefs = int(line.strip())
+                continue
+            if len(coefs) < ncoefs:
+                coefs.append(float(line.strip()))
+            if "min_lambda" in line:
+                lmin = float(line[line.rfind(" ") :].strip())
+            if "max_lambda" in line:
+                lmax = float(line[line.rfind(" ") :].strip())
+    return np.array(coefs), lmin, lmax

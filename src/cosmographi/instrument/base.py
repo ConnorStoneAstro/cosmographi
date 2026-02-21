@@ -1,25 +1,45 @@
 import jax
 import jax.numpy as jnp
+from caskade import Module
+
 from ..throughput import Throughput
-from ..magsystem import MagSystem, MagAB
-from ..source import BaseSource
+from ..magsystem import MagSystem
+from ..source import Source
 from ..utils import flux
 
 
-class BaseInstrument:
+class Instrument(Module):
+    """
+    Base Instrument object that combines a throughput and magnitude system to
+    simulate observations of sources.
+
+    This class handles essentially everything that happens to the source
+    spectrum from the top of the atmosphere to the CCD (camera). It takes in a
+    source spectrum and produces an observed flux and magnitude for a given
+    filter, including noise. The main components of the instrument are the
+    throughput (which includes the effects of the atmosphere, telescope optics,
+    and filters) and the magnitude system (which defines how fluxes are
+    normalized and converted to magnitudes).
+    """
+
     def __init__(
-        self, throughput: Throughput, mag_system: MagSystem = MagAB(), Aeff=None, fov=None
+        self,
+        throughput: Throughput,
+        mag_system: MagSystem,
+        Aeff=None,
+        fov=None,
+        name=None,
     ):
+        super().__init__(name=name)
         self.throughput = throughput
         self.mag_system = mag_system
-        self.flux_normalization = self.mag_system.flux_norm(self.throughput)
         self.Aeff = Aeff  # Effective aperture size in cm^2
         self.fov = fov
 
-    def _observe_spectrum(self, band_i, source: BaseSource, *args, **kwargs):
+    def _observe_spectrum(self, band_i, source: Source, *args, **kwargs):
         return source.spectral_flux_density(self.throughput.w[band_i], *args, **kwargs)
 
-    def electron_flux(self, band_i, source: BaseSource, *args, **kwargs):
+    def electron_flux(self, band_i, source: Source, *args, **kwargs):
         """
         Return the flux of a source observed through the instrument's throughput.
         The result is provided in electrons/s/cm^2 rather than being normalized by a magnitude system.
@@ -39,10 +59,11 @@ class BaseInstrument:
             The observed flux of the source through the specified filter, in electrons/s/cm^2.
         """
         f = self._observe_spectrum(band_i, source, *args, **kwargs)
-        F = flux.f_lambda_band(self.throughput.w[band_i], f, self.throughput.T[band_i])
+        w = self.throughput.w[band_i]
+        F = flux.f_lambda_band(w, f, self.throughput.T(w, band_i))
         return F
 
-    def flux_var(self, band_i, exp_time, source: BaseSource, *args, **kwargs):
+    def flux_var(self, band_i, exp_time, source: Source, *args, **kwargs):
         """
         Return the flux and its measurement variance of a source observed through the instrument's throughput.
 
@@ -65,12 +86,13 @@ class BaseInstrument:
             The variance on the observed flux of the source through the specified filter, normalized by the magnitude system's reference flux.
         """
         F = self.electron_flux(band_i, source, *args, **kwargs)
+        norm = self.mag_system.flux_norm(band_i, self.throughput)
         return (
-            F / self.flux_normalization[band_i],  # Aeff and exp_time cancel
-            F / self.Aeff / exp_time / self.flux_normalization[band_i] ** 2,
+            F / norm,  # Aeff and exp_time cancel
+            F / self.Aeff / exp_time / norm**2,
         )
 
-    def flux(self, band_i, source: BaseSource, *args, **kwargs):
+    def flux(self, band_i, source: Source, *args, **kwargs):
         """
         Return the flux of a source observed through the instrument's throughput.
         The result is normalized (flux / flux_ref) in the magnitude system provided.
@@ -90,14 +112,15 @@ class BaseInstrument:
             The observed flux of the source through the specified filter, normalized by the magnitude system's reference flux.
         """
         F = self.electron_flux(band_i, source, *args, **kwargs)
-        return F / self.flux_normalization[band_i]
+        norm = self.mag_system.flux_norm(band_i, self.throughput)
+        return F / norm
 
-    def mag(self, source: BaseSource, *args, **kwargs):
+    def mag(self, source: Source, *args, **kwargs):
         F = self.flux(source, *args, **kwargs)
         mags = self.mag_system(F)
         return mags
 
-    def observe(self, key, band_i, exp_time, source: BaseSource, *args, **kwargs):
+    def observe(self, key, band_i, exp_time, source: Source, *args, **kwargs):
         """
         Create a mock observation of a source through the instrument's
         throughput, including noise.
@@ -113,18 +136,27 @@ class BaseInstrument:
         source : BaseSource
             The source to observe.
         *args, **kwargs
-            Additional arguments to pass to the source's spectral_flux_density method. Note that the wavelength argument (w) is provided by the Throughput object and should not be passed in by the user.
+            Additional arguments to pass to the source's spectral_flux_density
+            method. Note that the wavelength argument (w) is provided by the
+            Throughput object and should not be passed in by the user.
 
         Returns
         -------
         flux_obs : float
-            The observed flux of the source through the specified filter, normalized by the magnitude system's reference flux, including noise.
+            The observed flux of the source through the specified filter,
+            normalized by the magnitude system's reference flux, including
+            noise.
         flux_err_obs : float
-            The observed uncertainty on the flux of the source through the specified filter, normalized by the magnitude system's reference flux, including noise.
+            The observed uncertainty on the flux of the source through the
+            specified filter, normalized by the magnitude system's reference
+            flux, including noise.
         flux_true : float
-            The true flux of the source through the specified filter, normalized by the magnitude system's reference flux, without noise.
+            The true flux of the source through the specified filter, normalized
+            by the magnitude system's reference flux, without noise.
         flux_err_true : float
-            The true uncertainty on the flux of the source through the specified filter, normalized by the magnitude system's reference flux, without noise.
+            The true uncertainty on the flux of the source through the specified
+            filter, normalized by the magnitude system's reference flux, without
+            noise.
 
         Note
         ----
@@ -138,7 +170,8 @@ class BaseInstrument:
         # True flux, and true flux uncertainty in the magnitude system (flux / flux_ref)
         flux, flux_var = self.flux_var(band_i, exp_time, source, *args, **kwargs)
         # Scale factor between flux in magnitude system and number of electrons
-        scale = exp_time * self.Aeff * self.flux_normalization[band_i]
+        norm = self.mag_system.flux_norm(band_i, self.throughput)
+        scale = exp_time * self.Aeff * norm
 
         N = flux * scale  # Expected number of electrons
         Ne = jnp.sqrt(jnp.abs(flux_var)) * scale  # Flux error in electrons

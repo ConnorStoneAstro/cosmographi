@@ -1,4 +1,3 @@
-import jax.numpy as jnp
 import jax
 from caskade import Module, Param, forward
 
@@ -149,6 +148,6 @@ class Cosmology(Module):
     @forward
     def differential_comoving_volume(self, z):
         """
-        Compute the differential comoving volume at redshift z, ie dV/dz. Units: Mpc^3.
+        Compute the differential comoving volume at redshift z, ie dV/dz. Units: Mpc^3 / steradian.
         """
-        return 4 * jnp.pi * c_km * self.transverse_comoving_distance(z) ** 2 / self.H(z)
+        return c_km * self.transverse_comoving_distance(z) ** 2 / self.H(z)

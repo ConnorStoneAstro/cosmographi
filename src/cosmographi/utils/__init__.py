@@ -14,6 +14,7 @@ from .interpolation import WLS, gaussian_kernel, RBF_weights, RBF_init, RBF
 from .plots import corner_plot
 from .loading import load_salt2_surface, load_salt2_colour_law
 from .extinction import fp99_extinction_law, fp99_extinction_law_knots, calzetti00_extinction_law
+from .survey import cross_match_survey_circle
 
 __all__ = (
     "constants",
@@ -43,4 +44,5 @@ __all__ = (
     "fp99_extinction_law",
     "fp99_extinction_law_knots",
     "calzetti00_extinction_law",
+    "cross_match_survey_circle",
 )
